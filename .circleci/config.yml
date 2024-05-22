@@ -1,0 +1,109 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@4.13.3
+
+workflows:
+  main-workflow:
+    jobs:
+      - download-taskagent:
+          context: org-global
+      - scan-image:
+          context: org-global
+          requires:
+            - download-taskagent
+      - build-and-publish-image:
+          name: build-and-publish-image-amd64
+          context: org-global
+          requires:
+            - scan-image
+      - build-and-publish-image:
+          name: build-and-publish-image-arm64
+          resource: arm.medium
+          arch: arm64
+          context: org-global
+          requires:
+            - scan-image
+
+executors:
+  ccc:
+    docker:
+      - image: circleci/command-convenience:0.1
+        auth:
+          username: $DOCKER_HUB_USER
+          password: $DOCKER_HUB_PASSWORD
+    environment:
+      NAME: << pipeline.parameters.release-name >>
+      DOCKERFILE_PATH: Dockerfile
+      TEAM: on-prem
+
+parameters:
+  release-name:
+    type: string
+    default: "runner-init"
+
+jobs:
+  download-taskagent:
+    machine:
+      image: ubuntu-2204:2024.02.7
+      resource_class: small
+    steps:
+      - checkout
+      - docker_login
+      - run: ./do download-taskagent amd64
+      - run: ./do download-taskagent arm64
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "./circleci-agent-*"
+      - notify_failing_main
+
+  build-and-publish-image:
+    parameters:
+      resource:
+        type: string
+        default: small
+      arch:
+        type: string
+        default: amd64
+    machine:
+      image: ubuntu-2204:2024.02.7
+      resource_class: << parameters.resource>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - docker_login
+      - run: docker build -t circleci/<< pipeline.parameters.release-name >>:agent-<< parameters.arch >> --build-arg ARCH=<< parameters.arch >> .
+      # TODO: Publish images (on main) once the repo is set up
+      - notify_failing_main
+
+  scan-image:
+    executor: ccc
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: .
+      - run:
+          name: Scan Docker images
+          command: scan
+      - store_artifacts:
+          path: ccc-image-scan-results
+      - notify_failing_main
+
+commands:
+  docker_login:
+    steps:
+      - run:
+          name: "Log into Docker Hub"
+          command: |
+            docker login -u "${DOCKER_HUB_USER}" -p "${DOCKER_HUB_PASSWORD}"
+    
+  notify_failing_main:
+    steps:
+      - slack/notify:
+          channel: runner-alerts
+          branch_pattern: main
+          event: fail
+          template: basic_fail_1
