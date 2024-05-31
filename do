@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_download_taskagent="Download task agents via the picard image"
+help_download_taskagents="Download task agents via the picard image"
 download-taskagents() {
     id=$(docker create circleci/picard:agent)
 
