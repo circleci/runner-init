@@ -6,24 +6,25 @@ orbs:
 workflows:
   main-workflow:
     jobs:
-      - download-taskagent:
+      - prepare-agents:
           context: org-global
-      - scan-image:
-          context: org-global
-          requires:
-            - download-taskagent
-      - build-and-publish-image:
+      # These are scratch images with a single binary (this is scanned on creation by execution) so I think we can do without scanning?
+      # - scan-image:
+      #     context: org-global
+      #     requires:
+      #       - prepare-agents
+      - build-and-publish-images:
           name: build-and-publish-image-amd64
           context: org-global
           requires:
-            - scan-image
-      - build-and-publish-image:
+            - prepare-agents
+      - build-and-publish-images:
           name: build-and-publish-image-arm64
           resource: arm.medium
           arch: arm64
           context: org-global
           requires:
-            - scan-image
+            - prepare-agents
 
 executors:
   ccc:
@@ -43,22 +44,22 @@ parameters:
     default: "runner-init"
 
 jobs:
-  download-taskagent:
+  prepare-agents:
     machine:
       image: ubuntu-2204:2024.02.7
-      resource_class: small
+      resource_class: large
     steps:
       - checkout
       - docker_login
-      - run: ./do download-taskagent amd64
-      - run: ./do download-taskagent arm64
+      - run: ./do build-fake-agents
+      - run: ./do download-taskagents
       - persist_to_workspace:
           root: .
           paths:
-            - "./circleci-agent-*"
+            - "./bin/circleci-*"
       - notify_failing_main
 
-  build-and-publish-image:
+  build-and-publish-images:
     parameters:
       resource:
         type: string
@@ -74,7 +75,7 @@ jobs:
       - attach_workspace:
           at: .
       - docker_login
-      - run: docker build -t circleci/<< pipeline.parameters.release-name >>:agent-<< parameters.arch >> --build-arg ARCH=<< parameters.arch >> .
+      - run: ./do build-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
       # TODO: Publish images (on main) once the repo is set up
       - notify_failing_main
 
