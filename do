@@ -4,13 +4,63 @@ set -eu -o pipefail
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_download_taskagent="Download task agent via the picard image"
-download-taskagent() {
-    arch=${1:?'task agent arch must be specified'}
-
+help_download_taskagents="Download task agents via the picard image"
+download-taskagents() {
     id=$(docker create circleci/picard:agent)
-    docker cp "$id":/opt/circleci/linux/"$arch"/circleci-agent ./circleci-agent-"$arch"
+
+    docker cp "$id":/opt/circleci/linux/amd64/circleci-agent ./bin/circleci-agent-amd64
+    docker cp "$id":/opt/circleci/linux/arm64/circleci-agent ./bin/circleci-agent-arm64
+
     docker rm -v "$id"
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_build_fake_agents="Build the fake agent go binaries"
+build-fake-agents() {
+    GOOS=linux GOARCH=amd64 go build -C ./fake-agent -o ../bin/circleci-fake-agent-amd64 ./
+    GOOS=linux GOARCH=arm64 go build -C ./fake-agent -o ../bin/circleci-fake-agent-arm64 ./
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_build_docker_images="Build the runner init images"
+build-docker-images() {
+    repo=${1:?'image repo name must be specified'}
+    arch=${2:?'image arch must be specified'}
+
+    docker build -t circleci/"$repo":agent-"$arch" --build-arg ARCH="$arch" -f ./runner-init/Dockerfile .
+    docker build -t circleci/"$repo":test-agent-"$arch" --build-arg ARCH="$arch" -f ./runner-init/fake-agent.Dockerfile .
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_publish_docker_images="Publish the runner init images"
+publish-docker-images() {
+    repo=${1:?'image repo name must be specified'}
+    arch=${2:?'image arch must be specified'}
+
+    docker push circleci/"$repo":agent-"$arch"
+    docker push circleci/"$repo":test-agent-"$arch"
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_publish_docker_manifest="Publish the multiarch manifest"
+publish-docker-manifest() {
+    repo=${1:?'image repo name must be specified'}
+
+    docker manifest create circleci/runner-init:agent \
+        --amend circleci/runner-init:agent-amd64 \
+        --amend circleci/runner-init:agent-arm64
+
+    docker manifest push circleci/runner-init:agent
+
+    docker manifest create circleci/runner-init:test-agent \
+        --amend circleci/runner-init:test-agent-amd64 \
+        --amend circleci/runner-init:test-agent-arm64
+
+    docker manifest push circleci/runner-init:test-agent
 }
 
 help-text-intro() {

@@ -6,36 +6,29 @@ orbs:
 workflows:
   main-workflow:
     jobs:
-      - download-taskagent:
+      - prepare-agents:
           context: org-global
-      - scan-image:
-          context: org-global
-          requires:
-            - download-taskagent
-      - build-and-publish-image:
+      - build-and-publish-images:
           name: build-and-publish-image-amd64
           context: org-global
           requires:
-            - scan-image
-      - build-and-publish-image:
+            - prepare-agents
+      - build-and-publish-images:
           name: build-and-publish-image-arm64
           resource: arm.medium
           arch: arm64
           context: org-global
           requires:
-            - scan-image
-
-executors:
-  ccc:
-    docker:
-      - image: circleci/command-convenience:0.1
-        auth:
-          username: $DOCKER_HUB_USER
-          password: $DOCKER_HUB_PASSWORD
-    environment:
-      NAME: << pipeline.parameters.release-name >>
-      DOCKERFILE_PATH: Dockerfile
-      TEAM: on-prem
+            - prepare-agents
+      - publish-manifest:
+          context: org-global
+          filters:
+            branches:
+              only:
+                - main
+          requires:
+            - build-and-publish-image-amd64
+            - build-and-publish-image-arm64
 
 parameters:
   release-name:
@@ -43,22 +36,22 @@ parameters:
     default: "runner-init"
 
 jobs:
-  download-taskagent:
+  prepare-agents:
     machine:
       image: ubuntu-2204:2024.02.7
-      resource_class: small
+      resource_class: large
     steps:
       - checkout
       - docker_login
-      - run: ./do download-taskagent amd64
-      - run: ./do download-taskagent arm64
+      - run: ./do build-fake-agents
+      - run: ./do download-taskagents
       - persist_to_workspace:
           root: .
           paths:
-            - "./circleci-agent-*"
+            - "./bin/circleci-*"
       - notify_failing_main
 
-  build-and-publish-image:
+  build-and-publish-images:
     parameters:
       resource:
         type: string
@@ -74,22 +67,22 @@ jobs:
       - attach_workspace:
           at: .
       - docker_login
-      - run: docker build -t circleci/<< pipeline.parameters.release-name >>:agent-<< parameters.arch >> --build-arg ARCH=<< parameters.arch >> .
-      # TODO: Publish images (on main) once the repo is set up
+      - run: ./do build-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
+      - when:
+          condition:
+            equal: [ main, << pipeline.git.branch >> ]
+          steps:
+            - run: ./do publish-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
       - notify_failing_main
 
-  scan-image:
-    executor: ccc
+  publish-manifest:
+    machine:
+      image: ubuntu-2204:2024.02.7
+      resource_class: small
     steps:
       - checkout
-      - setup_remote_docker
-      - attach_workspace:
-          at: .
-      - run:
-          name: Scan Docker images
-          command: scan
-      - store_artifacts:
-          path: ccc-image-scan-results
+      - docker_login
+      - run: ./do publish-docker-manifest << pipeline.parameters.release-name >>
       - notify_failing_main
 
 commands:
