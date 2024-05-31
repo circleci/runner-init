@@ -8,11 +8,6 @@ workflows:
     jobs:
       - prepare-agents:
           context: org-global
-      # These are scratch images with a single binary (this is scanned on creation by execution) so I think we can do without scanning?
-      # - scan-image:
-      #     context: org-global
-      #     requires:
-      #       - prepare-agents
       - build-and-publish-images:
           name: build-and-publish-image-amd64
           context: org-global
@@ -25,18 +20,15 @@ workflows:
           context: org-global
           requires:
             - prepare-agents
-
-executors:
-  ccc:
-    docker:
-      - image: circleci/command-convenience:0.1
-        auth:
-          username: $DOCKER_HUB_USER
-          password: $DOCKER_HUB_PASSWORD
-    environment:
-      NAME: << pipeline.parameters.release-name >>
-      DOCKERFILE_PATH: Dockerfile
-      TEAM: on-prem
+      - publish-manifest:
+          context: org-global
+          filters:
+            branches:
+              only:
+                - main
+          requires:
+            - build-and-publish-image-amd64
+            - build-and-publish-image-arm64
 
 parameters:
   release-name:
@@ -76,21 +68,21 @@ jobs:
           at: .
       - docker_login
       - run: ./do build-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
-      # TODO: Publish images (on main) once the repo is set up
+      - when:
+          condition:
+            equal: [ main, << pipeline.git.branch >> ]
+          steps:
+            - run: ./do publish-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
       - notify_failing_main
 
-  scan-image:
-    executor: ccc
+  publish-manifest:
+    machine:
+      image: ubuntu-2204:2024.02.7
+      resource_class: small
     steps:
       - checkout
-      - setup_remote_docker
-      - attach_workspace:
-          at: .
-      - run:
-          name: Scan Docker images
-          command: scan
-      - store_artifacts:
-          path: ccc-image-scan-results
+      - docker_login
+      - run: ./do publish-docker-manifest << pipeline.parameters.release-name >>
       - notify_failing_main
 
 commands:
