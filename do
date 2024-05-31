@@ -46,7 +46,7 @@ publish-docker-images() {
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_publish_docker_manifest="Publish the mutliarch manifest"
+help_publish_docker_manifest="Publish the multiarch manifest"
 publish-docker-manifest() {
     repo=${1:?'image repo name must be specified'}
 
