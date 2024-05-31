@@ -81,7 +81,7 @@ func run(opts CommandRequest) {
 			}
 			// Ignore the 413 as a thing. This is just a handy code to pick to trigger us to start misbehaving
 			if resp.StatusCode == http.StatusRequestEntityTooLarge {
-				fmt.Println("fake circleci-agent staring to misbehave")
+				fmt.Println("fake circleci-agent starting to misbehave")
 				launchChildAndMisbehave(opts)
 				panic("shouldn't get here in a test")
 			}
