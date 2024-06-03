@@ -18,6 +18,8 @@ download-taskagents() {
 # shellcheck disable=SC2034
 help_build_fake_agents="Build the fake agent go binaries"
 build-fake-agents() {
+    export CGO_ENABLED=0
+
     GOOS=linux GOARCH=amd64 go build -C ./fake-agent -o ../bin/circleci-fake-agent-amd64 ./
     GOOS=linux GOARCH=arm64 go build -C ./fake-agent -o ../bin/circleci-fake-agent-arm64 ./
 }
