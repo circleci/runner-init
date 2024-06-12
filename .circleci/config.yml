@@ -78,12 +78,11 @@ jobs:
       - notify_failing_main
 
   prepare-agents:
-    machine:
-      image: *linux_machine_image
-      resource_class: large
+    docker:
+      - image: *go_image
+    resource_class: circleci-runner/rum-large
     steps:
       - checkout
-      - docker_login
       - run: ./do build-fake-agents
       - persist_to_workspace:
           root: .
