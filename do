@@ -7,12 +7,37 @@ GORELEASER_VERSION="v1.26.2"
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_build_fake_agents="Build the fake agent go binaries"
-build-fake-agents() {
-    export CGO_ENABLED=0
+help_build="Build the Go binaries and archives"
+build() {
+    set -x
 
-    GOOS=linux GOARCH=amd64 go build -o ./bin/circleci-fake-agent-amd64 ./internal/fake-agent
-    GOOS=linux GOARCH=arm64 go build -o ./bin/circleci-fake-agent-arm64 ./internal/fake-agent
+    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
+
+    VERSION="${GORELEASER_VERSION}" \
+    BUILD_VERSION="${BUILD_VERSION:?'required'}" ./bin/goreleaser \
+        --clean \
+        --config "${BUILD_CONFIG:-./.goreleaser/binaries/builds.yaml}" \
+        --skip=validate \
+        --snapshot "$@"
+
+    echo "${BUILD_VERSION}" | tee ./target/version.txt
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_dev_binary="Build single target Go binaries for local dev"
+dev-build() {
+    set -x
+
+    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
+
+    VERSION="${GORELEASER_VERSION}" \
+    BUILD_VERSION="${BUILD_VERSION:-dev}" ./bin/goreleaser build \
+        --clean \
+        --config ./.goreleaser/binaries/builds.yaml \
+        --single-target \
+        --skip=validate \
+        --snapshot "$@"
 }
 
 # This variable is used, but shellcheck can't tell.

@@ -1,4 +1,4 @@
-module github.com/circleci/circleci-fake-agent
+module github.com/circleci/runner-init
 
 go 1.22.0
 

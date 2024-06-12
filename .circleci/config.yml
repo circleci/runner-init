@@ -12,24 +12,27 @@ x-data:
   linux_machine_image: &linux_machine_image ubuntu-2204:2024.02.7
   go_image: &go_image cimg/go:1.22
 
+executors:
+  go:
+    docker:
+      - image: *go_image
+    resource_class: circleci-runner/rum-large
+
 workflows:
   main-workflow:
     jobs:
       - lint
-      - prepare-agents:
-          context: org-global
+      - build
       - build-and-publish-images:
           name: build-and-publish-image-amd64
           context: org-global
-          requires:
-            - prepare-agents
+          requires: [ lint, build ]
       - build-and-publish-images:
           name: build-and-publish-image-arm64
           resource: arm.medium
           arch: arm64
           context: org-global
-          requires:
-            - prepare-agents
+          requires: [ lint, build ]
       - publish-manifest:
           context: org-global
           filters:
@@ -42,9 +45,7 @@ workflows:
 
 jobs:
   lint:
-    docker:
-      - image: *go_image
-    resource_class: circleci-runner/rum-large
+    executor: go
     steps:
       - setup
       - run:
@@ -77,17 +78,19 @@ jobs:
       - store_results
       - notify_failing_main
 
-  prepare-agents:
-    docker:
-      - image: *go_image
-    resource_class: circleci-runner/rum-large
+  build:
+    executor: go
     steps:
-      - checkout
-      - run: ./do build-fake-agents
+      - goreleaser_setup
+      - run: go mod download
+      - run:
+          name: Build binaries
+          command: |
+            BUILD_VERSION="$(<version.txt)-<< pipeline.number >>-$(git rev-parse --short HEAD 2>/dev/null || echo latest)" \
+              ./do build
       - persist_to_workspace:
           root: .
-          paths:
-            - "./bin/circleci-*"
+          paths: [ target ]
       - notify_failing_main
 
   build-and-publish-images:
@@ -144,6 +147,26 @@ commands:
           path: test-reports
       - store_test_results:
           path: test-reports
+
+  goreleaser_setup:
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install GoReleaser
+          command: |
+            if [[ "$(command -v apk)" ]]; then
+              # Alpine doesn't come with the coreutils' sha256sum, which the GoReleaser Bash script expects...
+              apk upgrade && apk add coreutils
+            fi
+
+            curl -sfL https://goreleaser.com/static/run -o ./bin/goreleaser --create-dirs && chmod +x ./bin/goreleaser
+
+            if [[ $(uname -m) == aarch64 ]]; then
+              # A little hack to get the GoReleaser Bash script working on ARM64...
+              sed -i 's/$(uname -m)/arm64/g' ./bin/goreleaser
+            fi
 
   docker_login:
     steps:
