@@ -2,6 +2,9 @@
 
 set -eu -o pipefail
 
+reportDir="test-reports"
+GORELEASER_VERSION="v1.26.2"
+
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
 help_download_taskagents="Download task agents via the picard image"
@@ -20,8 +23,8 @@ help_build_fake_agents="Build the fake agent go binaries"
 build-fake-agents() {
     export CGO_ENABLED=0
 
-    GOOS=linux GOARCH=amd64 go build -C ./fake-agent -o ../bin/circleci-fake-agent-amd64 ./
-    GOOS=linux GOARCH=arm64 go build -C ./fake-agent -o ../bin/circleci-fake-agent-arm64 ./
+    GOOS=linux GOARCH=amd64 go build -o ./bin/circleci-fake-agent-amd64 ./internal/fake-agent
+    GOOS=linux GOARCH=arm64 go build -o ./bin/circleci-fake-agent-arm64 ./internal/fake-agent
 }
 
 # This variable is used, but shellcheck can't tell.
@@ -63,6 +66,101 @@ publish-docker-manifest() {
         --amend circleci/runner-init:test-agent-arm64
 
     docker manifest push circleci/runner-init:test-agent
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_lint="Run golanci-lint to lint go files."
+lint() {
+    if [ ! -d "./bin" ]; then
+        install-devtools
+    fi
+    eval "./bin/golangci-lint run ${1:-}"
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_lint_report="Run golanci-lint to lint Go files and generate an XML report."
+lint-report() {
+    output="${reportDir}/lint.xml"
+    echo "Storing results as JUnit XML in ${output}" >&2
+    mkdir -p "${reportDir}"
+
+    lint "--timeout 5m --out-format junit-xml | tee ${output}"
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_go_mod_tidy="Run 'go mod tidy' to clean up module files."
+go-mod-tidy() {
+    go mod tidy -v
+}
+
+# Attempt to download go binary tools from github correctly
+# go binary releases are somewhat consistent thanks to goreleaser
+# however they're not actually that consistent, so this is a pain
+# if this is causing more problems than it solves, throw it away
+install-github-binary() {
+    local org=$1     # github org
+    local repo=$2    # github repo == binary name
+    local vs=$3      # version separator in tarball filename
+    local winext=$4  # archive extension on windows
+    local version=$5 # desired version number
+
+    if ./bin/$repo --version | grep "$version" >/dev/null; then
+        return
+    fi
+
+    local os=$(go env GOHOSTOS)
+    local arch=$(go env GOARCH)
+
+    local ext='.tar.gz'
+    if [[ "$os" = "windows" ]]; then
+        local ext="$winext"
+    fi
+
+    local unpack='tar xvzf'
+    if [[ "$ext" = ".zip" ]]; then
+        local unpack='unzip'
+    fi
+
+    local tmp=$(mktemp -d ${TMPDIR:-/tmp/}do-install-github-binary.XXXXXX)
+    trap "{ rm -rf $tmp; }" EXIT
+
+    set -x
+    mkdir -p ./bin
+
+    curl --fail --location --output "$tmp/download" \
+        "https://github.com/$org/$repo/releases/download/v${version}/${repo}${vs}${version}${vs}${os}${vs}${arch}${ext}"
+
+    pushd "$tmp"
+    $unpack "$tmp/download"
+    popd
+
+    local binary=$(find "$tmp" -name "$repo*" -type f)
+    chmod +x "$binary"
+    mv "$binary" ./bin/
+}
+
+install-go-bin() {
+    for pkg in "${@}"; do
+        GOBIN="${PWD}/bin" go install "${pkg}" &
+    done
+    wait
+}
+
+help_install_devtools="Install tools that other tasks expect into ./bin"
+install-devtools() {
+    install-github-binary golangci golangci-lint '-' '.zip' 1.55.2
+    install-github-binary gotestyourself gotestsum '_' '.tar.gz' 1.10.0
+
+    if [[ "${CI:-}" == "true" ]]; then
+        echo "Run GoReleaser via bash script in CI"
+        curl -sfL https://goreleaser.com/static/run -o ./bin/goreleaser --create-dirs && chmod +x ./bin/goreleaser
+    else
+        echo "Installing GoReleaser via go install"
+        install-go-bin "github.com/goreleaser/goreleaser@latest"
+    fi
 }
 
 help-text-intro() {

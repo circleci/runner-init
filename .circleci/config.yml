@@ -1,11 +1,21 @@
 version: 2.1
 
+parameters:
+  release-name:
+    type: string
+    default: "runner-init"
+
 orbs:
   slack: circleci/slack@4.13.3
+
+x-data:
+  linux_machine_image: &linux_machine_image ubuntu-2204:2024.02.7
+  go_image: &go_image cimg/go:1.22
 
 workflows:
   main-workflow:
     jobs:
+      - lint
       - prepare-agents:
           context: org-global
       - build-and-publish-images:
@@ -30,15 +40,46 @@ workflows:
             - build-and-publish-image-amd64
             - build-and-publish-image-arm64
 
-parameters:
-  release-name:
-    type: string
-    default: "runner-init"
-
 jobs:
+  lint:
+    docker:
+      - image: *go_image
+    resource_class: circleci-runner/rum-large
+    steps:
+      - setup
+      - run:
+          name: Lint report
+          command: ./do lint-report
+      - run:
+          name: Check `go mod tidy`
+          command: |
+            ./do go-mod-tidy
+            git --no-pager diff --exit-code go.mod go.sum
+      - run:
+          name: Check the CHANGELOG.md has been updated
+          command: |
+            if [[ -z "${CIRCLE_PULL_REQUEST}" ]] && [[ "${CIRCLE_BRANCH}" != 'main' ]]; then
+              echo 'Only check on a PR or main' && exit 0
+            fi
+
+            if git --no-pager diff main --exit-code changelog.md; then
+              # Only check actual customer-facing changes have been made
+              git --no-pager diff main --exit-code -- \
+                ':*.go' \
+                ':*Dockerfile' \
+                ':!*_test.go' \
+                ':!*internal/*'
+            fi
+      - run:
+          name: Try running `./do lint --fix` if this fails
+          command: ./do lint
+          when: on_fail
+      - store_results
+      - notify_failing_main
+
   prepare-agents:
     machine:
-      image: ubuntu-2204:2024.02.7
+      image: *linux_machine_image
       resource_class: large
     steps:
       - checkout
@@ -60,7 +101,7 @@ jobs:
         type: string
         default: amd64
     machine:
-      image: ubuntu-2204:2024.02.7
+      image: *linux_machine_image
       resource_class: << parameters.resource>>
     steps:
       - checkout
@@ -77,7 +118,7 @@ jobs:
 
   publish-manifest:
     machine:
-      image: ubuntu-2204:2024.02.7
+      image: *linux_machine_image
       resource_class: small
     steps:
       - checkout
@@ -86,13 +127,33 @@ jobs:
       - notify_failing_main
 
 commands:
+  setup:
+    steps:
+      - checkout
+      - run: go mod download
+      - run: ./do install-devtools
+
+  store_results:
+    steps:
+      - run:
+          name: Strip ANSI codes from xunit output
+          when: always
+          command: |
+            # The test output produces ANSI codes, which the XML writer converts into annoying
+            # \0xfffd characters - we'll strip these out to make the XML a bit more readable
+            sed -i 's/�\[[0-9;]*[a-zA-Z]//g' test-reports/*.xml || true
+      - store_artifacts:
+          path: test-reports
+      - store_test_results:
+          path: test-reports
+
   docker_login:
     steps:
       - run:
           name: "Log into Docker Hub"
           command: |
             docker login -u "${DOCKER_HUB_USER}" -p "${DOCKER_HUB_PASSWORD}"
-    
+
   notify_failing_main:
     steps:
       - slack/notify:
