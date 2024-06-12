@@ -14,71 +14,28 @@ build() {
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
 
     VERSION="${GORELEASER_VERSION}" \
-    BUILD_VERSION="${BUILD_VERSION:?'required'}" ./bin/goreleaser \
+    BUILD_VERSION="${BUILD_VERSION:-dev}" ./bin/goreleaser \
         --clean \
-        --config "${BUILD_CONFIG:-./.goreleaser/binaries/builds.yaml}" \
-        --skip=validate \
-        --snapshot "$@"
+        --config "${BUILD_CONFIG:-./.goreleaser/binaries.yaml}" \
+        --skip=validate "$@"
 
-    echo "${BUILD_VERSION}" | tee ./target/version.txt
+    echo "${BUILD_VERSION:-dev}" | tee ./target/version.txt
 }
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_dev_binary="Build single target Go binaries for local dev"
-dev-build() {
+help_dev_binary="Build and push the Docker images and manifests"
+images() {
     set -x
 
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
 
-    VERSION="${GORELEASER_VERSION}" \
-    BUILD_VERSION="${BUILD_VERSION:-dev}" ./bin/goreleaser build \
+    SKIP_PUSH="${SKIP_PUSH:-true}" \
+        VERSION="${GORELEASER_VERSION}" \
+        ./bin/goreleaser \
         --clean \
-        --config ./.goreleaser/binaries/builds.yaml \
-        --single-target \
-        --skip=validate \
-        --snapshot "$@"
-}
-
-# This variable is used, but shellcheck can't tell.
-# shellcheck disable=SC2034
-help_build_docker_images="Build the runner init images"
-build-docker-images() {
-    repo=${1:?'image repo name must be specified'}
-    arch=${2:?'image arch must be specified'}
-
-    docker build -t circleci/"$repo":agent-"$arch" --build-arg ARCH="$arch" -f ./runner-init/Dockerfile .
-    docker build -t circleci/"$repo":test-agent-"$arch" --build-arg ARCH="$arch" -f ./runner-init/fake-agent.Dockerfile .
-}
-
-# This variable is used, but shellcheck can't tell.
-# shellcheck disable=SC2034
-help_publish_docker_images="Publish the runner init images"
-publish-docker-images() {
-    repo=${1:?'image repo name must be specified'}
-    arch=${2:?'image arch must be specified'}
-
-    docker push circleci/"$repo":agent-"$arch"
-    docker push circleci/"$repo":test-agent-"$arch"
-}
-
-# This variable is used, but shellcheck can't tell.
-# shellcheck disable=SC2034
-help_publish_docker_manifest="Publish the multiarch manifest"
-publish-docker-manifest() {
-    repo=${1:?'image repo name must be specified'}
-
-    docker manifest create circleci/runner-init:agent \
-        --amend circleci/runner-init:agent-amd64 \
-        --amend circleci/runner-init:agent-arm64
-
-    docker manifest push circleci/runner-init:agent
-
-    docker manifest create circleci/runner-init:test-agent \
-        --amend circleci/runner-init:test-agent-amd64 \
-        --amend circleci/runner-init:test-agent-arm64
-
-    docker manifest push circleci/runner-init:test-agent
+        --config "${BUILD_CONFIG:-./.goreleaser/dockers.yaml}" \
+        --skip=validate "${@}"
 }
 
 # This variable is used, but shellcheck can't tell.

@@ -1,47 +1,26 @@
 version: 2.1
 
-parameters:
-  release-name:
-    type: string
-    default: "runner-init"
-
 orbs:
   slack: circleci/slack@4.13.3
-
-x-data:
-  linux_machine_image: &linux_machine_image ubuntu-2204:2024.02.7
-  go_image: &go_image cimg/go:1.22
 
 executors:
   go:
     docker:
-      - image: *go_image
+      - image: cimg/go:1.22
     resource_class: circleci-runner/rum-large
+  linux_machine:
+    machine:
+      image: ubuntu-2204:2024.02.7
+      resource_class: large
 
 workflows:
   main-workflow:
     jobs:
       - lint
       - build
-      - build-and-publish-images:
-          name: build-and-publish-image-amd64
-          context: org-global
+      - images:
+          context: [ org-global ]
           requires: [ lint, build ]
-      - build-and-publish-images:
-          name: build-and-publish-image-arm64
-          resource: arm.medium
-          arch: arm64
-          context: org-global
-          requires: [ lint, build ]
-      - publish-manifest:
-          context: org-global
-          filters:
-            branches:
-              only:
-                - main
-          requires:
-            - build-and-publish-image-amd64
-            - build-and-publish-image-arm64
 
 jobs:
   lint:
@@ -63,7 +42,7 @@ jobs:
               echo 'Only check on a PR or main' && exit 0
             fi
 
-            if git --no-pager diff main --exit-code changelog.md; then
+            if git --no-pager diff main --exit-code CHANGELOG.md; then
               # Only check actual customer-facing changes have been made
               git --no-pager diff main --exit-code -- \
                 ':*.go' \
@@ -93,39 +72,16 @@ jobs:
           paths: [ target ]
       - notify_failing_main
 
-  build-and-publish-images:
-    parameters:
-      resource:
-        type: string
-        default: small
-      arch:
-        type: string
-        default: amd64
-    machine:
-      image: *linux_machine_image
-      resource_class: << parameters.resource>>
+  images:
+    executor: linux_machine
     steps:
-      - checkout
-      - attach_workspace:
-          at: .
+      - goreleaser_setup
       - docker_login
-      - run: ./do build-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
-      - when:
-          condition:
-            equal: [ main, << pipeline.git.branch >> ]
-          steps:
-            - run: ./do publish-docker-images << pipeline.parameters.release-name >> << parameters.arch >>
-      - notify_failing_main
-
-  publish-manifest:
-    machine:
-      image: *linux_machine_image
-      resource_class: small
-    steps:
-      - checkout
-      - docker_login
-      - run: ./do publish-docker-manifest << pipeline.parameters.release-name >>
-      - notify_failing_main
+      - run:
+          name: Build and maybe push images
+          command: |
+            SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi) \
+              ./do images
 
 commands:
   setup:

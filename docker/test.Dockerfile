@@ -1,8 +1,9 @@
 FROM busybox:stable-musl as build
 
-ARG ARCH=amd64
+ARG ARCH
 
+COPY ./target/bin/${ARCH}/orchestrator /opt/circleci/bin/orchestrator
 COPY ./target/bin/${ARCH}/fake-task-agent /opt/circleci/bin/circleci-agent
-COPY ./runner-init/init.sh /init.sh
+COPY ./docker/scripts/init.sh /init.sh
 
 ENTRYPOINT ["/init.sh"]

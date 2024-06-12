@@ -1,0 +1,71 @@
+dist: ./target/build-dockers
+
+builds:
+  - skip: true
+
+release:
+  disable: true # this stops GoReleaser from trying to add git tags itself
+
+dockers:
+  - id: init-amd64
+    image_templates: ["circleci/runner-init:agents-amd64"]
+    skip_push: "{{.Env.SKIP_PUSH}}"
+    dockerfile: ./docker/Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--build-arg=ARCH=amd64"
+    extra_files:
+      - ./docker/scripts/init.sh
+      - ./target/bin/amd64/orchestrator
+
+  - id: init-arm64
+    image_templates: ["circleci/runner-init:agents-arm64"]
+    skip_push: "{{.Env.SKIP_PUSH}}"
+    dockerfile: ./docker/Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--build-arg=ARCH=arm64"
+    extra_files:
+      - ./docker/scripts/init.sh
+      - ./target/bin/arm64/orchestrator
+
+  - id: testinit-amd64
+    image_templates: ["circleci/runner-init:test-agents-amd64"]
+    skip_push: "{{.Env.SKIP_PUSH}}"
+    dockerfile: ./docker/test.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--build-arg=ARCH=amd64"
+    extra_files:
+      - ./docker/scripts/init.sh
+      - ./target/bin/amd64/orchestrator
+      - ./target/bin/amd64/fake-task-agent
+
+  - id: testinit-arm64
+    image_templates: ["circleci/runner-init:test-agents-arm64"]
+    skip_push: "{{.Env.SKIP_PUSH}}"
+    dockerfile: ./docker/test.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--build-arg=ARCH=arm64"
+    extra_files:
+      - ./docker/scripts/init.sh
+      - ./target/bin/arm64/orchestrator
+      - ./target/bin/arm64/fake-task-agent
+
+docker_manifests:
+  - name_template: "circleci/runner-init:agents"
+    image_templates:
+      - "circleci/runner-init:agents-amd64"
+      - "circleci/runner-init:agents-arm64"
+    skip_push: "{{.Env.SKIP_PUSH}}"
+
+  - name_template: "circleci/runner-init:test-agents"
+    image_templates:
+      - "circleci/runner-init:test-agents-amd64"
+      - "circleci/runner-init:test-agents-arm64"
+    skip_push: "{{.Env.SKIP_PUSH}}"
