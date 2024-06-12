@@ -7,18 +7,6 @@ GORELEASER_VERSION="v1.26.2"
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_download_taskagents="Download task agents via the picard image"
-download-taskagents() {
-    id=$(docker create circleci/picard:agent)
-
-    docker cp "$id":/opt/circleci/linux/amd64/circleci-agent ./bin/circleci-agent-amd64
-    docker cp "$id":/opt/circleci/linux/arm64/circleci-agent ./bin/circleci-agent-arm64
-
-    docker rm -v "$id"
-}
-
-# This variable is used, but shellcheck can't tell.
-# shellcheck disable=SC2034
 help_build_fake_agents="Build the fake agent go binaries"
 build-fake-agents() {
     export CGO_ENABLED=0

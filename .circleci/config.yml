@@ -85,7 +85,6 @@ jobs:
       - checkout
       - docker_login
       - run: ./do build-fake-agents
-      - run: ./do download-taskagents
       - persist_to_workspace:
           root: .
           paths:
