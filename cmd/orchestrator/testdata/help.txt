@@ -1,0 +1,22 @@
+Usage: test-app --task.token=STRING --task.allocation=STRING --kube.task-pod=STRING [flags]
+
+Flags:
+  -h, --help                       Show context-sensitive help.
+      --o11y-level="info"          Set the logging level ($O11Y_LEVEL)
+      --o11y-format="color"        Format used for stderr and file logging
+                                   ($O11Y_FORMAT)
+      --o11y-file="-"              ($O11Y_FILE)
+      --runner-api="https://runner.circleci.com"
+                                   Runner API base URL ($RUNNER_API)
+      --shutdown-delay=DURATION    Delay before shutting the service down on
+                                   SIGTERM ($SHUTDOWN_DELAY)
+      --task.token=STRING          Bearer token for a task ($TASK_TOKEN)
+      --task.allocation=STRING     Allocation ID to uniquely identify this task
+                                   attempt ($TASK_ALLOCATION)
+      --kube.config="~/.kube/config"
+                                   Location of the kubeconfig file
+                                   ($KUBE_CONFIG)
+      --kube.namespace="circleci"
+                                   The Kubernetes namespace ($KUBE_NAMESPACE)
+      --kube.task-pod=STRING       Name of the task pod this logger is in
+                                   ($KUBE_TASK_POD)
