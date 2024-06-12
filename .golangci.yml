@@ -1,0 +1,153 @@
+run:
+  build-tags:
+    - smoke
+
+# Do not treat these as gospel, adjust as appropriate
+linters-settings:
+  govet:
+    check-shadowing: false
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 15
+  maligned:
+    suggest-new: true
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: log
+          - pkg: github.com/davecgh/go-spew
+          - pkg: github.com/cenkalti/backof[f]
+            desc: use github.com/cenkalti/backoff/v4 instead
+          - pkg: gotest.tools/assert
+            desc: use gotest.tools/v3/assert instead
+          - pkg: gotest.tools/assert/cmp
+            desc: use gotest.tools/v3/assert/cmp instead
+          - pkg: gotest.tools/env
+            desc: use gotest.tools/v3/env instead
+          - pkg: gotest.tools/fs
+            desc: use gotest.tools/v3/fs instead
+          - pkg: gotest.tools/golden
+            desc: use gotest.tools/v3/golden instead
+          - pkg: gotest.tools/icmd
+            desc: use gotest.tools/v3/icmd instead
+          - pkg: gotest.tools/poll
+            desc: use gotest.tools/v3/poll instead
+          - pkg: gotest.tools/skip
+            desc: use gotest.tools/v3/skip instead
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 6
+    min-occurrences: 8
+  lll:
+    line-length: 120
+  funlen:
+    lines: 80
+  goimports:
+    local-prefixes: github.com/circleci/runner-init
+  nakedret:
+    max-func-lines: 0
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/circleci/runner-init)
+    custom-order: true
+
+issues:
+  # If the default exclude list seems rather aggressive, opt in when needed instead
+  exclude-use-default: false
+
+  exclude-rules:
+    # Duplicated errcheck checks
+    - linters: [gosec]
+      text: G104
+    # Ignore aliasing in tests
+    - linters: [gosec]
+      text: G601
+      path: _test\.go
+    # Non-secure URLs are okay in tests
+    - linters: [gosec]
+      text: G107
+      path: _test\.go
+    # Duplicated errcheck checks
+    - linters: [revive]
+      text: 'package-comments: should have a package comment'
+    # Nil pointers will fail tests anyway
+    - linters: [staticcheck]
+      text: SA5011
+      path: _test\.go
+    # Duplicated errcheck checks
+    - linters: [staticcheck]
+      text: SA5001
+    # Duplicated function naming check
+    - linters: [stylecheck]
+      text: ST1003
+    # We don't require comments on everything
+    - linters: [golint]
+      text: should have( a package)? comment
+    # Very long lines are ok if they're URLs
+    - linters: [lll]
+      source: https?://
+    # Very long lines are ok if they're in http response message fields
+    - linters: [ lll ]
+      source: '"message":'
+    # Very long lines are ok if they're in CLI config
+    - linters: [ lll ]
+      source: 'env:"'
+    # Ignore errcheck on a deferred Close
+    - linters: [errcheck]
+      source: ^\s*defer .*\.Close(.*)$
+    # Ignore long tests
+    - linters: [funlen]
+      text: ^Function 'Test.*
+    # Ignore fixture setup
+    - linters: [funlen]
+      text: ^Function 'runServices.*
+    # We don't require package docs
+    - linters: [stylecheck]
+      text: ST1000
+    # unparam is allowed in tests
+    - linters: [unparam]
+      path: _test\.go
+    # We aren't that bothered about undocumented structs
+    - linters: [revive]
+      text: 'exported:'
+    # I'd rather keep all assignments to ctx, actually
+    - linters: [ineffassign]
+      text: 'ineffectual assignment to ctx'
+    # Duplicate of above
+    - linters: [staticcheck]
+      text: 'SA4006: this value of `ctx` is never used'
+    - linters: [gocyclo]
+      text: func `TestE2E.*
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - depguard
+    - errcheck
+    - funlen
+    - gci
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused

@@ -24,8 +24,9 @@ func main() {
 
 	kong.Parse(&opts, kong.Name("circleci-agent"))
 
-	// We need the fake task agent binary to be able to access the local test API from inside the cluster. If we are using kind (or another docker hosted k8s cluster)
-	// for testing then using the domain below will forward requests on to the host machine's localhost interface
+	// We need the fake task agent binary to be able to access the local test API from inside the cluster.
+	// If we are using kind (or another docker hosted k8s cluster) for testing then using the domain below will forward
+	// requests on to the host machine's localhost interface
 	driver := os.Getenv("DRIVER_MODE")
 	dockerHostAddress := os.Getenv("DOCKER_HOST")
 	if driver == "kubernetes" {
