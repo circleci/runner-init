@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
-- [#12](https://github.com/circleci/runner-init/pull/12) [INTERNAL] Use [GoReleaser](https://goreleaser.com/) For building the binaries.
+- [#13](https://github.com/circleci/runner-init/pull/13) [INTERNAL] Use [GoReleaser](https://goreleaser.com/) for building and pushing the images and manifests.
+- [#12](https://github.com/circleci/runner-init/pull/12) [INTERNAL] Use [GoReleaser](https://goreleaser.com/) for building the binaries.
 - [#11](https://github.com/circleci/runner-init/pull/11) [INTERNAL] Download task agent binaries directly via the Dockerfile.
 - [#10](https://github.com/circleci/runner-init/pull/10) [INTERNAL] Set up linting tools, initiated a changelog, and performed other configurations in preparation for the orchestration agent.

@@ -2,9 +2,11 @@ FROM circleci/picard:agent as task-agent-image
 
 FROM busybox:stable-musl
 
-ARG ARCH=amd64
+ARG ARCH
 
 COPY --from=task-agent-image /opt/circleci/linux/${ARCH}/circleci-agent /opt/circleci/bin/circleci-agent
-COPY ./runner-init/init.sh /init.sh
+
+COPY ./target/bin/${ARCH}/orchestrator /opt/circleci/bin/orchestrator
+COPY ./docker/scripts/init.sh /init.sh
 
 ENTRYPOINT ["/init.sh"]
