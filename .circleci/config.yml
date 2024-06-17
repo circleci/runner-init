@@ -8,6 +8,12 @@ executors:
     docker:
       - image: cimg/go:1.22
     resource_class: circleci-runner/rum-large
+  ccc:
+    docker:
+      - image: circleci/command-convenience:0.1
+        auth:
+          username: ${DOCKER_HUB_USER}
+          password: ${DOCKER_HUB_PASSWORD}
   linux_machine:
     machine:
       image: ubuntu-2204:2024.02.7
@@ -19,9 +25,12 @@ workflows:
       - lint
       - test
       - build
+      - scan:
+          context: [ org-global ]
+          requires: [ build ]
       - images:
           context: [ org-global ]
-          requires: [ lint, test, build ]
+          requires: [ lint, test, build, scan ]
 
 jobs:
   lint:
@@ -90,6 +99,44 @@ jobs:
           command: |
             SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi) \
               ./do images
+
+  scan:
+    executor: ccc
+    parallelism: 4
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: .
+      - run:
+          name: Select Docker image combinations for scanning
+          command: |
+            archs='amd64 arm64'
+            for path in $(find docker/*Dockerfile); do
+              for arch in ${archs}; do
+                printf "${path} ${arch}\n" >>images.txt
+              done
+            done
+            cat images.txt
+            echo "Selecting '$(circleci-agent tests split images.txt)' for scanning"
+      - run:
+          name: Scan selected Docker images
+          command: |
+            while IFS=' ' read -r path arch; do
+              echo "Scanning ${path} ${arch}"
+              name=${path//\//_}-${arch}
+              NAME=${name,,} \
+                DOCKERFILE_PATH=${path} \
+                EXTRA_DOCKER_BUILD_ARGS="--build-arg ARCH=${arch}" \
+                scan
+            done \<<<$(circleci-agent tests split images.txt)
+      - run:
+          name: Check artifacts for scan results
+          command: ls ccc-image-scan-results && false
+          when: on_fail
+      - store_artifacts:
+          path: ccc-image-scan-results
+      - notify_failing_main
 
 commands:
   setup:
