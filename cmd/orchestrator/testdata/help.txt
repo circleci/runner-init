@@ -1,0 +1,10 @@
+Usage: test-app <command> [flags]
+
+Flags:
+  -h, --help                 Show context-sensitive help.
+      --shutdown-delay=5s    Delay shutdown by this amount ($SHUTDOWN_DELAY).
+
+Commands:
+  init [<source> [<destination>]] [flags]
+
+Run "test-app <command> --help" for more information on a command.

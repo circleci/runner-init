@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#14](https://github.com/circleci/runner-init/pull/14) [INTERNAL] Implement the init script as a mode of the orchestrator. This allows for the use of scratch for a minimal base image.
 - [#13](https://github.com/circleci/runner-init/pull/13) [INTERNAL] Use [GoReleaser](https://goreleaser.com/) for building and pushing the images and manifests.
 - [#12](https://github.com/circleci/runner-init/pull/12) [INTERNAL] Use [GoReleaser](https://goreleaser.com/) for building the binaries.
 - [#11](https://github.com/circleci/runner-init/pull/11) [INTERNAL] Download task agent binaries directly via the Dockerfile.

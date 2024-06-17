@@ -14,7 +14,7 @@ builds:
     no_unique_dist_dir: true
 
   - id: fake-task-agent
-    main: ./internal/faketaskagent
+    main: ./internal/testing/faketaskagent
     binary: ./bin/{{.Arch}}/fake-task-agent
     ldflags:
       - -s -w

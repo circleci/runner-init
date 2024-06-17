@@ -16,7 +16,6 @@ dockers:
       - "--platform=linux/amd64"
       - "--build-arg=ARCH=amd64"
     extra_files:
-      - ./docker/scripts/init.sh
       - ./target/bin/amd64/orchestrator
 
   - id: init-arm64
@@ -28,7 +27,6 @@ dockers:
       - "--platform=linux/arm64"
       - "--build-arg=ARCH=arm64"
     extra_files:
-      - ./docker/scripts/init.sh
       - ./target/bin/arm64/orchestrator
 
   - id: testinit-amd64
@@ -40,7 +38,6 @@ dockers:
       - "--platform=linux/amd64"
       - "--build-arg=ARCH=amd64"
     extra_files:
-      - ./docker/scripts/init.sh
       - ./target/bin/amd64/orchestrator
       - ./target/bin/amd64/fake-task-agent
 
@@ -53,7 +50,6 @@ dockers:
       - "--platform=linux/arm64"
       - "--build-arg=ARCH=arm64"
     extra_files:
-      - ./docker/scripts/init.sh
       - ./target/bin/arm64/orchestrator
       - ./target/bin/arm64/fake-task-agent
 

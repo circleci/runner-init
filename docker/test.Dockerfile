@@ -1,9 +1,12 @@
-FROM busybox:stable-musl as build
+FROM scratch as builder
 
 ARG ARCH
 
-COPY ./target/bin/${ARCH}/orchestrator /opt/circleci/bin/orchestrator
-COPY ./target/bin/${ARCH}/fake-task-agent /opt/circleci/bin/circleci-agent
-COPY ./docker/scripts/init.sh /init.sh
+COPY ./target/bin/${ARCH}/orchestrator /
+COPY ./target/bin/${ARCH}/fake-task-agent /
 
-ENTRYPOINT ["/init.sh"]
+FROM scratch
+
+COPY --from=builder / /
+
+ENTRYPOINT ["/orchestrator", "init"]

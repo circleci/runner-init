@@ -1,12 +1,14 @@
 FROM circleci/picard:agent as task-agent-image
 
-FROM busybox:stable-musl
+FROM scratch as builder
 
 ARG ARCH
 
-COPY --from=task-agent-image /opt/circleci/linux/${ARCH}/circleci-agent /opt/circleci/bin/circleci-agent
+COPY --from=task-agent-image /opt/circleci/linux/${ARCH}/circleci-agent /
+COPY ./target/bin/${ARCH}/orchestrator /
 
-COPY ./target/bin/${ARCH}/orchestrator /opt/circleci/bin/orchestrator
-COPY ./docker/scripts/init.sh /init.sh
+FROM scratch
 
-ENTRYPOINT ["/init.sh"]
+COPY --from=builder / /
+
+ENTRYPOINT ["/orchestrator", "init"]
