@@ -1,8 +1,8 @@
 Usage: test-app [<source> [<destination>]] [flags]
 
 Arguments:
-  [<source>]         Path where to copy the agent binaries from.
-  [<destination>]    Path where to copy the agent binaries to.
+  [<source>]         Path where to copy the agent binaries from ($SOURCE).
+  [<destination>]    Path where to copy the agent binaries to ($DESTINATION).
 
 Flags:
   -h, --help    Show context-sensitive help.
