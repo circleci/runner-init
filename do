@@ -4,6 +4,7 @@ set -eu -o pipefail
 
 reportDir="test-reports"
 GORELEASER_VERSION="v1.26.2"
+GOTESTSUM_VERSION="1.12.0"
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
@@ -57,6 +58,17 @@ lint-report() {
     mkdir -p "${reportDir}"
 
     lint "--timeout 5m --out-format junit-xml | tee ${output}"
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_test="Run the tests"
+test() {
+    command -v ./bin/gotestsum || install-go-bin "gotest.tools/gotestsum@v${GOTESTSUM_VERSION}"
+
+    mkdir -p "${reportDir}"
+    # -count=1 is used to forcibly disable test result caching
+    ./bin/gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
 }
 
 # This variable is used, but shellcheck can't tell.
@@ -122,7 +134,7 @@ install-go-bin() {
 help_install_devtools="Install tools that other tasks expect into ./bin"
 install-devtools() {
     install-github-binary golangci golangci-lint '-' '.zip' 1.55.2
-    install-github-binary gotestyourself gotestsum '_' '.tar.gz' 1.10.0
+    install-github-binary gotestyourself gotestsum '_' '.tar.gz' "${GOTESTSUM_VERSION}"
 
     if [[ "${CI:-}" == "true" ]]; then
         echo "Run GoReleaser via bash script in CI"

@@ -17,10 +17,11 @@ workflows:
   main-workflow:
     jobs:
       - lint
+      - test
       - build
       - images:
           context: [ org-global ]
-          requires: [ lint, build ]
+          requires: [ lint, test, build ]
 
 jobs:
   lint:
@@ -55,6 +56,13 @@ jobs:
           command: ./do lint
           when: on_fail
       - store_results
+      - notify_failing_main
+
+  test:
+    executor: go
+    steps:
+      - setup
+      - run: ./do test
       - notify_failing_main
 
   build:
