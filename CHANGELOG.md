@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#17](https://github.com/circleci/runner-init/pull/17) [INTERNAL] Build server images.
 - [#16](https://github.com/circleci/runner-init/pull/16) [INTERNAL] Add an acceptance test framework and cases for the init command. In addition, some changes were made to the CLI configuration to account for limitations on positional arguments of the ex test runner.
 - [#14](https://github.com/circleci/runner-init/pull/14) [INTERNAL] Implement the init script as a mode of the orchestrator. This allows for the use of scratch for a minimal base image.
 - [#13](https://github.com/circleci/runner-init/pull/13) [INTERNAL] Use [GoReleaser](https://goreleaser.com/) for building and pushing the images and manifests.

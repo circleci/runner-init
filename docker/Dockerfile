@@ -1,6 +1,8 @@
-FROM circleci/picard:agent as task-agent-image
+ARG PICARD_VERSION=agent
 
-FROM scratch as builder
+FROM circleci/picard:${PICARD_VERSION} AS task-agent-image
+
+FROM scratch AS builder
 
 ARG ARCH
 

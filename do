@@ -29,6 +29,8 @@ help_dev_binary="Build and push the Docker images and manifests"
 images() {
     set -x
 
+    get-server-versions
+
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
 
     SKIP_PUSH="${SKIP_PUSH:-true}" \
@@ -36,7 +38,17 @@ images() {
         ./bin/goreleaser \
         --clean \
         --config "${BUILD_CONFIG:-./.goreleaser/dockers.yaml}" \
-        --skip=validate "${@}"
+        --skip=validate "$@"
+}
+
+get-server-versions() {
+    for i in $(seq 3 5); do
+
+    git -C server checkout server-4."$i"
+
+    export SERVER_4_"$i"_PICARD="$(yq .circleci/picard -r server/images.yaml)"
+
+    done
 }
 
 # This variable is used, but shellcheck can't tell.
