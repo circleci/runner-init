@@ -95,6 +95,9 @@ jobs:
       - goreleaser_setup
       - docker_login
       - run:
+          name: Checkout server repo
+          command: git clone https://scotty-approver:$SCOTTY_APPROVER_TOKEN@github.com/circleci/server.git
+      - run:
           name: Build and maybe push images
           command: |
             SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi) \
