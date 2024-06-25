@@ -95,8 +95,11 @@ jobs:
       - goreleaser_setup
       - docker_login
       - run:
-          name: Checkout server repo
+          name: Check out server repo
           command: git clone https://scotty-approver:$SCOTTY_APPROVER_TOKEN@github.com/circleci/server.git
+      - notify_slack:
+          header: ":goat: Release triggered"
+          version: "$(<version.txt)"
       - run:
           name: Build and maybe push images
           command: |
@@ -196,3 +199,74 @@ commands:
           branch_pattern: main
           event: fail
           template: basic_fail_1
+
+  notify_slack:
+    parameters:
+      header:
+        type: string
+      version:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: [ main, << pipeline.git.branch >> ]
+          steps:
+            - run:
+                name: Slack Notification
+                command: |
+                  # Provide error if no webhook is set and error. Otherwise continue
+                  if [ -z "${SLACK_WEBHOOK}" ]; then
+                    echo '$SLACK_WEBHOOK not set'
+                    exit 1
+                  fi
+
+                  cat \<< EOF | tee /tmp/slack-webhook-body
+                  {
+                  	"blocks": [
+                  		{
+                  			"type": "header",
+                  			"text": {
+                  				"type": "plain_text",
+                  				"text": "<< parameters.header >>",
+                  				"emoji": true
+                  			}
+                  		},
+                  		{
+                  			"type": "section",
+                  			"fields": [
+                  				{
+                  					"type": "mrkdwn",
+                  					"text": "*Project:*\n$CIRCLE_PROJECT_REPONAME"
+                  				},
+                  				{
+                  					"type": "mrkdwn",
+                  					"text": "*Author:*\n$CIRCLE_USERNAME"
+                  				}
+                  			]
+                  		},
+                  		{
+                  			"type": "section",
+                  			"fields": [
+                  				{
+                  					"type": "mrkdwn",
+                  					"text": "*Version:*\n<<parameters.version>>"
+                  				},
+                  				{
+                  					"type": "mrkdwn",
+                  					"text": "*CircleCI Build:*\n<$CIRCLE_BUILD_URL|$CIRCLE_BUILD_NUM>"
+                  				}
+                  			]
+                  		},
+                  		{
+                  			"type": "section",
+                  			"text": {
+                  				"type": "mrkdwn",
+                  				"text": "*Commit Message:*\n$(git show HEAD --no-patch --format=%s | jq -R '.' | sed -e 's/^"//' -e 's/"$//')"
+                  			}
+                  		}
+                  	]
+                  }
+                  EOF
+
+                  curl --fail -H 'Content-type: application/json' \
+                      --data @/tmp/slack-webhook-body "${SLACK_WEBHOOK}"
