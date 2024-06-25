@@ -29,6 +29,11 @@ func TestHelp(t *testing.T) {
 			cli:          &cli.Init,
 			wantFilename: "init.txt",
 		},
+		{
+			name:         "check run-task command help",
+			cli:          &cli.RunTask,
+			wantFilename: "run-task.txt",
+		},
 	}
 
 	for _, tt := range tests {
