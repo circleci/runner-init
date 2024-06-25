@@ -1,0 +1,7 @@
+Usage: test-app [flags]
+
+Flags:
+  -h, --help    Show context-sensitive help.
+      --health-check-addr="localhost:7623"
+                Address for the health check API to listen on
+                ($HEALTH_CHECK_ADDR).

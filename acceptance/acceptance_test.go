@@ -11,9 +11,11 @@ import (
 )
 
 var (
-	orchestratorTestBinary = os.Getenv("ORCHESTRATOR_TEST_BINARY")
-	binariesPath           = ""
-	taskAgentBinary        = ""
+	orchestratorTestBinary        = os.Getenv("ORCHESTRATOR_TEST_BINARY")
+	orchestratorTestBinaryRunTask = ""
+
+	binariesPath    = ""
+	taskAgentBinary = ""
 )
 
 func TestMain(m *testing.M) {
@@ -57,5 +59,24 @@ func runTests(m *testing.M) (int, error) {
 	fmt.Printf("Using 'orchestrator' test binary: %q\n", orchestratorTestBinary)
 	fmt.Printf("Using fake 'task-agent' test binary: %q\n", taskAgentBinary)
 
+	if err := createRunTaskScript(); err != nil {
+		return 0, err
+	}
+	fmt.Printf("Using 'orchestrator run-task' script: %q\n", orchestratorTestBinaryRunTask)
+
 	return m.Run(), nil
+}
+
+// A little hack to get around limitations of the test runner on positional arguments
+func createRunTaskScript() error {
+	script := "#!/bin/bash\nexec " + orchestratorTestBinary + " run-task"
+	scriptPath := binariesPath + "/orchestratorRunTask.sh"
+
+	if err := os.WriteFile(scriptPath, []byte(script), 0750); err != nil { //nolint:gosec
+		return err
+	}
+
+	orchestratorTestBinaryRunTask = scriptPath
+
+	return nil
 }

@@ -24,7 +24,7 @@ func TestInit(t *testing.T) {
 		"DESTINATION="+destDir,
 		"SHUTDOWN_DELAY=0",
 	)
-	res, err := r.Start(orchestratorTestBinary, "init")
+	res, err := r.Start(orchestratorTestBinary)
 	assert.NilError(t, err)
 
 	t.Run("Run init", func(t *testing.T) {

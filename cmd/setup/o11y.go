@@ -13,7 +13,7 @@ func O11y(version string) (context.Context, func(context.Context), error) {
 		// If `HoneycombEnabled` is false, this doesn't matter. Without context,
 		// this log can be misleading and has been confused with the runner API token.
 		HoneycombKey: "-",
-		Format:       "json",
+		Format:       "text",
 		Version:      version,
 		Service:      "orchestrator",
 	}
