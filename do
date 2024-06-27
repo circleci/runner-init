@@ -85,6 +85,14 @@ test() {
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
+help_smoke_tests="Run the smoke tests"
+smoke-tests() {
+    GOTESTSUM_FORMAT="${GOTESTSUM_FORMAT:-standard-verbose}" \
+        test -test.timeout=20m -tags smoke ./internal/testing/ci/smoke
+}
+
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
 help_go_mod_tidy="Run 'go mod tidy' to clean up module files."
 go-mod-tidy() {
     go mod tidy -v
