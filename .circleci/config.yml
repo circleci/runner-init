@@ -100,7 +100,7 @@ jobs:
       - run:
           name: Set SKIP_PUSH variable
           command: |
-            echo 'export SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi)' >> $BASH_ENV
+            echo 'export SKIP_PUSH=false' >> $BASH_ENV
       - run:
           name: Build and maybe push images for cloud
           command: ./do images
