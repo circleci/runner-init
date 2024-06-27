@@ -25,16 +25,15 @@ build() {
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_dev_binary="Build and push the Docker images and manifests"
+help_images="Build and push the Docker images and manifests."
 images() {
     set -x
-
-    if
-    get-server-versions
 
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
 
     SKIP_PUSH="${SKIP_PUSH:-true}" \
+        IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX:-""}" \
+        PICARD_VERSION="${PICARD_VERSION:-agent}" \
         VERSION="${GORELEASER_VERSION}" \
         ./bin/goreleaser \
         --clean \
@@ -42,13 +41,21 @@ images() {
         --skip=validate "$@"
 }
 
-get-server-versions() {
-    for i in $(seq 3 5); do
+# This variable is used, but shellcheck can't tell.
+# shellcheck disable=SC2034
+help_images_for_server="Build and push the Docker images and manifests for supported server versions."
+images-for-server() {
+    MAJOR_SERVER_VERSION=4
+    MINOR_VERSION_START=3
+    MINOR_VERSION_END=5
 
-    git -C server checkout server-4."$i"
+    for minor in $(seq ${MINOR_VERSION_START} ${MINOR_VERSION_END}); do
 
-    export SERVER_4_"$i"_PICARD="$(yq .circleci/picard -r server/images.yaml)"
+        git -C "${SERVER_REPO_PATH:?'server repo path required'}" checkout server-${MAJOR_SERVER_VERSION}."${minor}"
 
+        export PICARD_VERSION="$(yq .circleci/picard -r "${SERVER_REPO_PATH}/images.yaml")"
+        echo "Building for build-agent version ${PICARD_VERSION}"
+        IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" ./do images
     done
 }
 

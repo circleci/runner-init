@@ -8,101 +8,28 @@ release:
 
 dockers:
   - id: init-amd64
-    image_templates: ["circleci/runner-init:agents-amd64"]
+    image_templates: ["circleci/runner-init:agent-amd64{{.Env.IMAGE_TAG_SUFFIX}}"]
     skip_push: "{{.Env.SKIP_PUSH}}"
     dockerfile: ./docker/Dockerfile
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--build-arg=ARCH=amd64"
-      - "--build-arg=PICARD_VERSION=agent"
-    extra_files:
-      - ./target/bin/amd64/orchestrator
-
-  - id: init-amd64-server-4.3
-    image_templates: ["circleci/runner-init:agent-amd64-server-4.3"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
-    dockerfile: ./docker/Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
-      - "--build-arg=PICARD_VERSION={{ .Env.SERVER_4_3_PICARD }}"
-    extra_files:
-      - ./target/bin/amd64/orchestrator
-
-  - id: init-amd64-server-4.4
-    image_templates: ["circleci/runner-init:agent-amd64-server-4.4"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
-    dockerfile: ./docker/Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
-      - "--build-arg=PICARD_VERSION={{ .Env.SERVER_4_4_PICARD }}"
-    extra_files:
-      - ./target/bin/amd64/orchestrator
-
-  - id: init-amd64-server-4.5
-    image_templates: ["circleci/runner-init:agent-amd64-server-4.5"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
-    dockerfile: ./docker/Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
-      - "--build-arg=PICARD_VERSION={{ .Env.SERVER_4_5_PICARD }}"
+      - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
     extra_files:
       - ./target/bin/amd64/orchestrator
 
   - id: init-arm64
-    image_templates: ["circleci/runner-init:agents-arm64"]
+    image_templates: ["circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"]
     skip_push: "{{.Env.SKIP_PUSH}}"
     dockerfile: ./docker/Dockerfile
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"
       - "--build-arg=ARCH=arm64"
-      - "--build-arg=PICARD_VERSION=agent"
+      - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
     extra_files:
       - ./target/bin/arm64/orchestrator
-
-  - id: init-arm64-server-4.3
-    image_templates: ["circleci/runner-init:agent-arm64-server-4.3"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
-    dockerfile: ./docker/Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
-      - "--build-arg=PICARD_VERSION={{ .Env.SERVER_4_3_PICARD }}"
-    extra_files:
-      - ./target/bin/arm64/orchestrator
-
-  - id: init-arm64-server-4.4
-    image_templates: ["circleci/runner-init:agent-arm64-server-4.4"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
-    dockerfile: ./docker/Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
-      - "--build-arg=PICARD_VERSION={{ .Env.SERVER_4_4_PICARD }}"
-    extra_files:
-      - ./target/bin/arm64/orchestrator
-
-  - id: init-arm64-server-4.5
-    image_templates: ["circleci/runner-init:agent-arm64-server-4.5"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
-    dockerfile: ./docker/Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
-      - "--build-arg=PICARD_VERSION={{ .Env.SERVER_4_5_PICARD }}"
-    extra_files:
-      - ./target/bin/arm64/orchestrator
-
 
   - id: testinit-amd64
     image_templates: ["circleci/runner-init:test-agents-amd64"]
@@ -129,28 +56,10 @@ dockers:
       - ./target/bin/arm64/fake-task-agent
 
 docker_manifests:
-  - name_template: "circleci/runner-init:agents"
+  - name_template: "circleci/runner-init:agent{{.Env.IMAGE_TAG_SUFFIX}}"
     image_templates:
-      - "circleci/runner-init:agents-amd64"
-      - "circleci/runner-init:agents-arm64"
-    skip_push: "{{.Env.SKIP_PUSH}}"
-
-  - name_template: "circleci/runner-init:agent-server-4.3"
-    image_templates:
-      - "circleci/runner-init:agent-amd64-server-4.3"
-      - "circleci/runner-init:agent-arm64-server-4.3"
-    skip_push: "{{.Env.SKIP_PUSH}}"
-
-  - name_template: "circleci/runner-init:agent-server-4.4"
-    image_templates:
-      - "circleci/runner-init:agent-amd64-server-4.4"
-      - "circleci/runner-init:agent-arm64-server-4.4"
-    skip_push: "{{.Env.SKIP_PUSH}}"
-
-  - name_template: "circleci/runner-init:agent-server-4.5"
-    image_templates:
-      - "circleci/runner-init:agent-amd64-server-4.5"
-      - "circleci/runner-init:agent-arm64-server-4.5"
+      - "circleci/runner-init:agent-amd64{{.Env.IMAGE_TAG_SUFFIX}}"
+      - "circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"
     skip_push: "{{.Env.SKIP_PUSH}}"
 
   - name_template: "circleci/runner-init:test-agents"
