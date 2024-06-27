@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 reportDir="test-reports"
-GORELEASER_VERSION="v1.26.2"
+GORELEASER_VERSION="v2.0.1"
 GOTESTSUM_VERSION="1.12.0"
 
 # This variable is used, but shellcheck can't tell.
@@ -29,6 +29,7 @@ help_dev_binary="Build and push the Docker images and manifests"
 images() {
     set -x
 
+    if
     get-server-versions
 
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
