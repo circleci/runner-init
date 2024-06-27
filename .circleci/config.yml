@@ -94,17 +94,25 @@ jobs:
     steps:
       - goreleaser_setup
       - docker_login
-      - run:
-          name: Check out server repo
-          command: git clone https://scotty-approver:$SCOTTY_APPROVER_TOKEN@github.com/circleci/server.git
       - notify_slack:
           header: ":goat: Release triggered"
           version: "$(<version.txt)"
       - run:
-          name: Build and maybe push images
+          name: Set SKIP_PUSH variable
           command: |
-            SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi) \
-              ./do images
+            echo 'export SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi)' >> $BASH_ENV
+      - run:
+          name: Build and maybe push images for cloud
+          command: ./do images
+      - run:
+          name: Clone the server repo
+          command: |
+            git clone "https://scotty-approver:${SCOTTY_APPROVER_TOKEN}@github.com/circleci/server.git"
+            echo 'export SERVER_REPO_PATH="$PWD/server"' >> $BASH_ENV
+      - run:
+          name: Build and maybe push images for server
+          command: ./do images-for-server
+      - notify_failing_main
 
   scan:
     executor: ccc
