@@ -40,6 +40,7 @@ func (st *Tester) Setup(t *testing.T) {
 	t.Logf("Agent driver %q", st.AgentDriver)
 	t.Logf("Agent version %q", st.AgentVersion)
 	t.Logf("Is this a canary? %t", st.IsCanary)
+	t.Logf("Extra pipeline parameters: %v", st.ExtraPipelineParameters)
 
 	pipelineResp, err := st.triggerPipeline()
 	assert.NilError(t, err)
