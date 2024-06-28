@@ -1,3 +1,5 @@
+version: 2
+
 dist: ./target/build-dockers
 
 builds:

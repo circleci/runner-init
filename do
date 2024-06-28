@@ -12,7 +12,7 @@ help_build="Build the Go binaries and archives"
 build() {
     set -x
 
-    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
+    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/gorelease/v2r@latest"
 
     VERSION="${GORELEASER_VERSION}" \
     BUILD_VERSION="${BUILD_VERSION:-dev}" ./bin/goreleaser \
@@ -29,7 +29,7 @@ help_images="Build and push the Docker images and manifests."
 images() {
     set -x
 
-    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser@latest"
+    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
 
     SKIP_PUSH="${SKIP_PUSH:-true}" \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX:-""}" \
@@ -53,9 +53,12 @@ images-for-server() {
 
         git -C "${SERVER_REPO_PATH:?'server repo path required'}" checkout server-${MAJOR_SERVER_VERSION}."${minor}"
 
-        export PICARD_VERSION="$(yq .circleci/picard -r "${SERVER_REPO_PATH}/images.yaml")"
-        echo "Building for build-agent version ${PICARD_VERSION}"
-        IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" ./do images
+        picard_version="$(yq .circleci/picard -r "${SERVER_REPO_PATH}/images.yaml")"
+        echo "Building for build-agent version ${picard_version}"
+
+        PICARD_VERSION=${picard_version} \
+        IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" \
+            ./do images
     done
 }
 
@@ -169,7 +172,7 @@ install-devtools() {
         curl -sfL https://goreleaser.com/static/run -o ./bin/goreleaser --create-dirs && chmod +x ./bin/goreleaser
     else
         echo "Installing GoReleaser via go install"
-        install-go-bin "github.com/goreleaser/goreleaser@latest"
+        install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
     fi
 }
 
