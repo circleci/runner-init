@@ -27,7 +27,8 @@ func TestRunTask(t *testing.T) {
 	"task_agent_path": "%v",
 	"runner_api_base_url": "https://runner.circleci.com",
 	"allocation": "testallocation",
-	"max_run_time": 60000000000
+	"max_run_time": 60000000000,
+	"token_checksum": "ada63e98fe50eccb55036d88eda4b2c3709f53c2b65bc0335797067e9a2a5d8b"
 }`, taskAgentBinary)
 
 	t.Run("Probe for readiness", func(t *testing.T) {
