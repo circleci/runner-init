@@ -7,6 +7,7 @@ import (
 
 	"github.com/circleci/ex/config/secret"
 	"github.com/circleci/ex/testing/testcontext"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )
@@ -14,7 +15,7 @@ import (
 func Test_ReadFromStdin(t *testing.T) {
 	ctx := testcontext.Background()
 
-	goodStdin := `
+	goodConfig := `
 {
 	"entrypoint": [],
 	"token": "testtoken",
@@ -22,23 +23,24 @@ func Test_ReadFromStdin(t *testing.T) {
 	"runner_api_base_url": "https://example.com/api",
 	"allocation": "testallocation",
 	"ssh_advertise_addr": "192.168.1.1",
-	"max_run_time": 60000000000
+	"max_run_time": 60000000000,
+	"token_checksum": "ada63e98fe50eccb55036d88eda4b2c3709f53c2b65bc0335797067e9a2a5d8b"
 }`
 	goodTimeout := configReadTimeout
 
 	tests := []struct {
 		name string
 
-		stdin   string
-		timeout time.Duration
+		rawConfig string
+		timeout   time.Duration
 
 		wantConfig Config
 		wantError  string
 	}{
 		{
-			name:    "valid",
-			stdin:   goodStdin,
-			timeout: goodTimeout,
+			name:      "valid",
+			rawConfig: goodConfig,
+			timeout:   goodTimeout,
 			wantConfig: Config{
 				Entrypoint:       []string{},
 				Token:            secret.String("testtoken"),
@@ -51,13 +53,19 @@ func Test_ReadFromStdin(t *testing.T) {
 		},
 		{
 			name:      "invalid",
-			stdin:     `not a valid JSON string`,
+			rawConfig: `not a valid JSON string`,
 			timeout:   goodTimeout,
 			wantError: "failed to unmarshal config",
 		},
 		{
+			name:      "invalid checksum",
+			timeout:   goodTimeout,
+			rawConfig: `{"token": "tasktoken","token_checksum": "invalid"}`,
+			wantError: "invalid checksum on config token",
+		},
+		{
 			name:      "timeout",
-			stdin:     goodStdin,
+			rawConfig: goodConfig,
 			timeout:   1 * time.Nanosecond,
 			wantError: "timed out reading config from stdin",
 		},
@@ -72,7 +80,7 @@ func Test_ReadFromStdin(t *testing.T) {
 			// Simulate Stdin
 			r, w, _ := os.Pipe()
 			os.Stdin = r
-			_, err := w.Write([]byte(tt.stdin))
+			_, err := w.Write([]byte(tt.rawConfig))
 			assert.NilError(t, err)
 			err = w.Close()
 			assert.NilError(t, err)
@@ -80,7 +88,7 @@ func Test_ReadFromStdin(t *testing.T) {
 			err = config.ReadFromStdin(ctx)
 			if tt.wantError == "" {
 				assert.NilError(t, err)
-				assert.Check(t, cmp.DeepEqual(config, tt.wantConfig))
+				assert.Check(t, cmp.DeepEqual(config, tt.wantConfig, cmpopts.IgnoreFields(Config{}, "TokenChecksum")))
 			} else {
 				assert.Check(t, cmp.ErrorContains(err, tt.wantError))
 			}

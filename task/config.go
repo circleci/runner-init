@@ -2,7 +2,8 @@ package task
 
 import (
 	"context"
-	"encoding/json"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/circleci/ex/config/secret"
+	"github.com/goccy/go-json"
 )
 
 var configReadTimeout = 2 * time.Minute
@@ -26,6 +28,8 @@ type Config struct {
 	Allocation       string        `json:"allocation"`
 	SSHAdvertiseAddr string        `json:"ssh_advertise_addr"`
 	MaxRunTime       time.Duration `json:"max_run_time"`
+
+	TokenChecksum string `json:"token_checksum"`
 }
 
 func (c *Config) ReadFromStdin(ctx context.Context) error {
@@ -58,7 +62,18 @@ func (c *Config) ReadFromStdin(ctx context.Context) error {
 		return fmt.Errorf("timed out reading config from stdin: %w", ctx.Err())
 	}
 
+	if !c.validateTokenChecksum() {
+		return fmt.Errorf("invalid checksum on config token")
+	}
+
 	return nil
+}
+
+func (c *Config) validateTokenChecksum() bool {
+	hasher := sha256.New()
+	hasher.Write([]byte(c.Token.Raw()))
+
+	return c.TokenChecksum == hex.EncodeToString(hasher.Sum(nil))
 }
 
 func (c *Config) TaskAgentCmd() string {

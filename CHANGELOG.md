@@ -10,7 +10,8 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
-- [#18](https://github.com/circleci/runner-init/pull/18) INTERNAL] Set up the initial base for orchestrator's `run-task` command. This includes adding a health check server and the configuration required to execute task agent.
+- [#24](https://github.com/circleci/runner-init/pull/24) [INTERNAL] Add checksum validation of the task token to help detect transmission errors.
+- [#18](https://github.com/circleci/runner-init/pull/18) [INTERNAL] Set up the initial base for orchestrator's `run-task` command. This includes adding a health check server and the configuration required to execute task agent.
 - [#17](https://github.com/circleci/runner-init/pull/17) [INTERNAL] Build server images.
 - [#16](https://github.com/circleci/runner-init/pull/16) [INTERNAL] Add an acceptance test framework and cases for the init command. In addition, some changes were made to the CLI configuration to account for limitations on positional arguments of the ex test runner.
 - [#14](https://github.com/circleci/runner-init/pull/14) [INTERNAL] Implement the init script as a mode of the orchestrator. This allows for the use of scratch for a minimal base image.
