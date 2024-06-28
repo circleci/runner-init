@@ -21,11 +21,17 @@ type CLI struct {
 		IsCanary bool   `name:"is-canary" env:"IS_CANARY" default:"false" help:"Whether this is a canary or not. Some things like the Docker image repositories may differ for canaries."`
 
 		// Driver-specific parameters
-		Kubernetes `envprefix:"KUBERNETES_"`
+		Machine    `prefix:"machine-" envprefix:"MACHINE_"`
+		Kubernetes `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
 	} `envprefix:"SMOKE_TESTS_" embed:""`
 }
 
+type Machine struct {
+	Skip bool `env:"SKIP" help:"Skip tests for the machine driver."`
+}
+
 type Kubernetes struct {
+	Skip            bool   `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
 	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
 }
 
@@ -42,11 +48,13 @@ func TestSmoke(t *testing.T) {
 		name string
 
 		driver string
+		skip   bool
 		cases  []TestCase
 	}{
 		{
 			name:   "machine success",
 			driver: "machine",
+			skip:   cli.Tests.Machine.Skip,
 			cases: []TestCase{
 				{
 					WorkflowName:       "machine",
@@ -58,6 +66,7 @@ func TestSmoke(t *testing.T) {
 		{
 			name:   "kubernetes success",
 			driver: "kubernetes",
+			skip:   cli.Tests.Kubernetes.Skip,
 			cases: []TestCase{
 				{
 					WorkflowName:       "kubernetes",
@@ -72,6 +81,10 @@ func TestSmoke(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			if tt.skip {
+				t.Skipf("Tests for driver %q are disabled this run", tt.driver)
+			}
 
 			st := Tester{
 				AgentDriver:   tt.driver,
