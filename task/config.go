@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/circleci/ex/config/secret"
@@ -18,7 +17,8 @@ import (
 var configReadTimeout = 2 * time.Minute
 
 type Config struct {
-	Entrypoint []string `json:"entrypoint"`
+	Entrypoint          []string `json:"entrypoint"`
+	EnableUnsafeRetries bool     `json:"enable_unsafe_retries"`
 
 	// Task agent configuration
 	Token            secret.String `json:"token"`
@@ -76,7 +76,12 @@ func (c *Config) validateTokenChecksum() bool {
 	return c.TokenChecksum == hex.EncodeToString(hasher.Sum(nil))
 }
 
-func (c *Config) TaskAgentCmd() string {
+type Agent struct {
+	Cmd []string
+	Env []string
+}
+
+func (c *Config) Agent() Agent {
 	args := []string{
 		"_internal",
 		"agent-runner",
@@ -85,11 +90,18 @@ func (c *Config) TaskAgentCmd() string {
 		"--allocation=" + c.Allocation,
 		"--disableSpinUpStep",
 		"--disableIsolatedSSHDir",
-		fmt.Sprintf("--maxRunTime=%v", c.MaxRunTime.Seconds()),
+		fmt.Sprintf("--maxRunTime=%v", c.MaxRunTime),
 	}
 	if c.SSHAdvertiseAddr != "" {
 		args = append(args, "--sshAdvertiseAddr="+c.SSHAdvertiseAddr)
 	}
-	cmd := fmt.Sprintf("PATH=$PATH:%s %s %s", filepath.Dir(c.TaskAgentPath), c.TaskAgentPath, strings.Join(args, " "))
-	return cmd
+
+	cmd := append([]string{c.TaskAgentPath}, args...)
+
+	env := []string{fmt.Sprintf("PATH=$PATH:%s", filepath.Dir(c.TaskAgentPath))}
+
+	return Agent{
+		Cmd: cmd,
+		Env: env,
+	}
 }

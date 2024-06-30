@@ -18,6 +18,7 @@ func Test_ReadFromStdin(t *testing.T) {
 	goodConfig := `
 {
 	"entrypoint": [],
+	"enable_unsafe_retries": false,
 	"token": "testtoken",
 	"task_agent_path": "/path/to/agent",
 	"runner_api_base_url": "https://example.com/api",
@@ -80,12 +81,16 @@ func Test_ReadFromStdin(t *testing.T) {
 			// Simulate Stdin
 			r, w, _ := os.Pipe()
 			os.Stdin = r
-			_, err := w.Write([]byte(tt.rawConfig))
-			assert.NilError(t, err)
-			err = w.Close()
-			assert.NilError(t, err)
 
-			err = config.ReadFromStdin(ctx)
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				_, err := w.Write([]byte(tt.rawConfig))
+				assert.NilError(t, err)
+				err = w.Close()
+				assert.NilError(t, err)
+			}()
+
+			err := config.ReadFromStdin(ctx)
 			if tt.wantError == "" {
 				assert.NilError(t, err)
 				assert.Check(t, cmp.DeepEqual(config, tt.wantConfig, cmpopts.IgnoreFields(Config{}, "TokenChecksum")))
@@ -96,7 +101,7 @@ func Test_ReadFromStdin(t *testing.T) {
 	}
 }
 
-func Test_TaskAgentCmd(t *testing.T) {
+func Test_Agent(t *testing.T) {
 	config := &Config{
 		TaskAgentPath:    "/path/to/agent",
 		RunnerAPIBaseURL: "https://example.com/api",
@@ -105,10 +110,29 @@ func Test_TaskAgentCmd(t *testing.T) {
 		SSHAdvertiseAddr: "192.168.1.1",
 	}
 
-	expectedCmd := "PATH=$PATH:/path/to /path/to/agent _internal " +
-		"agent-runner --verbose --runnerAPIBaseURL=https://example.com/api " +
-		"--allocation=testallocation --disableSpinUpStep --disableIsolatedSSHDir " +
-		"--maxRunTime=3600 --sshAdvertiseAddr=192.168.1.1"
+	expectedCmd := []string{
+		"/path/to/agent",
+		"_internal",
+		"agent-runner",
+		"--verbose",
+		"--runnerAPIBaseURL=https://example.com/api",
+		"--allocation=testallocation",
+		"--disableSpinUpStep",
+		"--disableIsolatedSSHDir",
+		"--maxRunTime=1h0m0s",
+		"--sshAdvertiseAddr=192.168.1.1",
+	}
 
-	assert.Check(t, cmp.Equal(config.TaskAgentCmd(), expectedCmd))
+	expectedEnv := []string{
+		"PATH=$PATH:/path/to",
+	}
+
+	expectedAgent := Agent{
+		Cmd: expectedCmd,
+		Env: expectedEnv,
+	}
+
+	agent := config.Agent()
+
+	assert.Check(t, cmp.DeepEqual(agent, expectedAgent))
 }
