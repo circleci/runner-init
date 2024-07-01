@@ -22,7 +22,7 @@ func TestInit(t *testing.T) {
 	r := runner.New(
 		"SOURCE="+srcDir,
 		"DESTINATION="+destDir,
-		"SHUTDOWN_DELAY=0",
+		"CIRCLECI_GOAT_SHUTDOWN_DELAY=0",
 	)
 	res, err := r.Start(orchestratorTestBinary)
 	assert.NilError(t, err)

@@ -1,11 +1,8 @@
 package task
 
 import (
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,52 +23,19 @@ type Config struct {
 	Allocation       string        `json:"allocation"`
 	SSHAdvertiseAddr string        `json:"ssh_advertise_addr"`
 	MaxRunTime       time.Duration `json:"max_run_time"`
-
-	TokenChecksum string `json:"token_checksum"`
 }
 
-func (c *Config) ReadFrom(ctx context.Context, in io.Reader, timeout time.Duration) error {
-	bytesCh := make(chan []byte, 1)
-	errCh := make(chan error, 1)
+func (c *Config) UnmarshalJSON(b []byte) error {
+	type tmpConfig Config
+	var tc tmpConfig
 
-	go func() {
-		for {
-			bytes, err := io.ReadAll(in)
-			if err != nil {
-				errCh <- fmt.Errorf("failed to read config from stdin: %w", err)
-				return
-			}
-			if len(bytes) == 0 {
-				continue
-			}
-			bytesCh <- bytes
-			return
-		}
-	}()
-
-	select {
-	case err := <-errCh:
-		return err
-	case bytes := <-bytesCh:
-		if err := json.Unmarshal(bytes, c); err != nil {
-			return fmt.Errorf("failed to unmarshal config: %w", err)
-		}
-	case <-time.After(timeout):
-		return fmt.Errorf("timed out reading config from stdin: %w", ctx.Err())
+	if err := json.Unmarshal(b, &tc); err != nil {
+		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	if !c.validateTokenChecksum() {
-		return fmt.Errorf("invalid checksum on config token")
-	}
+	*c = Config(tc)
 
 	return nil
-}
-
-func (c *Config) validateTokenChecksum() bool {
-	hasher := sha256.New()
-	hasher.Write([]byte(c.Token.Raw()))
-
-	return c.TokenChecksum == hex.EncodeToString(hasher.Sum(nil))
 }
 
 type Agent struct {
@@ -96,7 +60,7 @@ func (c *Config) Agent() Agent {
 
 	cmd := append(strings.Split(c.TaskAgentPath, " "), args...)
 
-	env := []string{fmt.Sprintf("PATH=$PATH:%s", filepath.Dir(c.TaskAgentPath))}
+	env := []string{fmt.Sprintf("PATH=%s:%s", os.Getenv("PATH"), filepath.Dir(c.TaskAgentPath))}
 
 	return Agent{
 		Cmd: cmd,

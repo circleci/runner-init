@@ -4,7 +4,7 @@ Flags:
   -h, --help    Show context-sensitive help.
       --termination-grace-period=20s
                 How long the agent will wait for the task to complete if
-                interrupted ($TERMINATION_GRACE_PERIOD).
+                interrupted ($CIRCLECI_GOAT_TERMINATION_GRACE_PERIOD).
       --health-check-addr="localhost:7623"
                 Address for the health check API to listen on
-                ($HEALTH_CHECK_ADDR).
+                ($CIRCLECI_GOAT_HEALTH_CHECK_ADDR).
