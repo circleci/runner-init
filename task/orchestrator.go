@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -135,7 +137,26 @@ func (o *Orchestrator) newCmd(ctx context.Context, cmd []string, env ...string) 
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
+	o.maybeSwitchUser(ctx, c)
+
 	return c
+}
+
+func (o *Orchestrator) maybeSwitchUser(ctx context.Context, c *exec.Cmd) {
+	username := o.config.User
+	if username == "" {
+		return
+	}
+
+	usr, err := user.Lookup(username)
+	if err == nil {
+		uid, _ := strconv.Atoi(usr.Uid)
+		gid, _ := strconv.Atoi(usr.Gid)
+		c.SysProcAttr = &syscall.SysProcAttr{}
+		c.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+	} else {
+		o11y.LogError(ctx, "failed to lookup user", err, o11y.Field("username", username))
+	}
 }
 
 func (o *Orchestrator) Cleanup(_ context.Context) error {
