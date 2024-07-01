@@ -16,11 +16,11 @@ import (
 
 type Config struct {
 	Cmd                 []string `json:"cmd"`
+	User                string   `json:"user"`
 	EnableUnsafeRetries bool     `json:"enable_unsafe_retries"`
 
 	// Task agent configuration
 	Token            secret.String `json:"token"`
-	User             string        `json:"user"`
 	TaskAgentPath    string        `json:"task_agent_path"`
 	RunnerAPIBaseURL string        `json:"runner_api_base_url"`
 	Allocation       string        `json:"allocation"`

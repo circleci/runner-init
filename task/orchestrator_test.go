@@ -33,14 +33,14 @@ func TestOrchestrator(t *testing.T) {
 	tests := []struct {
 		name string
 
-		config  string
-		env     map[string]string
-		timeout time.Duration
+		config      string
+		env         map[string]string
+		gracePeriod time.Duration
+		timeout     time.Duration
 
-		wantRunError     string
-		wantCleanupError string
-		wantTimeout      bool
-		extraChecks      []func(t *testing.T)
+		wantError   string
+		wantTimeout bool
+		extraChecks []func(t *testing.T)
 	}{
 		{
 			name:   "happy path",
@@ -63,26 +63,33 @@ func TestOrchestrator(t *testing.T) {
 			},
 		},
 		{
-			name:         "invalid config",
-			config:       `a bad config`,
-			wantRunError: "failed setup for task: failed to unmarshal config",
+			name:        "finish within grace period",
+			config:      defaultConfig,
+			timeout:     500 * time.Millisecond,
+			gracePeriod: 2 * time.Second,
+			wantError:   "",
 		},
 		{
-			name:   "interrupted task",
+			name:      "error: invalid config",
+			config:    `a bad config`,
+			wantError: "failed setup for task: failed to unmarshal config",
+		},
+		{
+			name:   "error: interrupted task",
 			config: defaultConfig,
 			env: map[string]string{
 				"SIMULATE_RUNNING_A_TASK": "true",
 			},
-			timeout:          500 * time.Millisecond,
-			wantCleanupError: "error on shutdown: task agent process is still running and may interrupt the task",
+			timeout:   500 * time.Millisecond,
+			wantError: "task agent process is still running and may interrupt the task",
 		},
 		{
-			name:   "task agent misbehaving",
+			name:   "error: task agent misbehaving",
 			config: defaultConfig,
 			env: map[string]string{
 				"SIMULATE_TASK_AGENT_MISBEHAVING": "true",
 			},
-			wantRunError: "error while executing task agent: " +
+			wantError: "error while executing task agent: " +
 				"task agent command exited with an unexpected error: exit status 123",
 		},
 	}
@@ -114,26 +121,11 @@ func TestOrchestrator(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, tt.timeout)
 			defer cancel()
 
-			o := NewOrchestrator(r)
+			o := NewOrchestrator(r, tt.gracePeriod)
+			err := o.Run(ctx)
 
-			done := make(chan error, 1)
-			go func() {
-				done <- o.Run(ctx)
-			}()
-
-			select {
-			case err := <-done:
-				if tt.wantRunError != "" {
-					assert.Check(t, cmp.ErrorContains(err, tt.wantRunError))
-				} else {
-					assert.NilError(t, err)
-				}
-			case <-ctx.Done():
-			}
-
-			err := o.Cleanup(ctx)
-			if tt.wantCleanupError != "" {
-				assert.Check(t, cmp.ErrorContains(err, tt.wantCleanupError))
+			if tt.wantError != "" {
+				assert.Check(t, cmp.ErrorContains(err, tt.wantError))
 			} else {
 				assert.NilError(t, err)
 			}
