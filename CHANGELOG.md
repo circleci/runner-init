@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#25](https://github.com/circleci/runner-init/pull/25) [INTERNAL] Implement the ability to execute a task and a custom entrypoint.
 - [#24](https://github.com/circleci/runner-init/pull/24) [INTERNAL] Add checksum validation of the task token to help detect transmission errors.
 - [#18](https://github.com/circleci/runner-init/pull/18) [INTERNAL] Set up the initial base for orchestrator's `run-task` command. This includes adding a health check server and the configuration required to execute task agent.
 - [#17](https://github.com/circleci/runner-init/pull/17) [INTERNAL] Build server images.

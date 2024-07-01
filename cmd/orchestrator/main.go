@@ -82,7 +82,7 @@ func run(version, date string) (err error) {
 
 		sys.AddService(func(ctx context.Context) error {
 			defer cancel()
-			return runTask(ctx, orchestrator)
+			return orchestrator.Run(ctx)
 		})
 	}
 
@@ -98,7 +98,7 @@ func runSetup(ctx context.Context, cli cli, sys *system.System) (*task.Orchestra
 
 	os.Stdin = c.Stdin
 
-	o := task.NewOrchestrator()
+	o := task.NewOrchestrator(os.Stdin)
 	sys.AddService(o.Cleanup)
 	sys.AddHealthCheck(o)
 
@@ -107,12 +107,4 @@ func runSetup(ctx context.Context, cli cli, sys *system.System) (*task.Orchestra
 	}
 
 	return o, nil
-}
-
-func runTask(ctx context.Context, o *task.Orchestrator) error {
-	if err := o.Setup(ctx); err != nil {
-		return fmt.Errorf("failed setup for task: %w", err)
-	}
-
-	return o.Run(ctx)
 }

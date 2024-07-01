@@ -17,7 +17,8 @@ func Test_ReadFromStdin(t *testing.T) {
 
 	goodConfig := `
 {
-	"entrypoint": [],
+	"cmd": [],
+	"enable_unsafe_retries": false,
 	"token": "testtoken",
 	"task_agent_path": "/path/to/agent",
 	"runner_api_base_url": "https://example.com/api",
@@ -26,8 +27,6 @@ func Test_ReadFromStdin(t *testing.T) {
 	"max_run_time": 60000000000,
 	"token_checksum": "ada63e98fe50eccb55036d88eda4b2c3709f53c2b65bc0335797067e9a2a5d8b"
 }`
-	goodTimeout := configReadTimeout
-
 	tests := []struct {
 		name string
 
@@ -40,9 +39,8 @@ func Test_ReadFromStdin(t *testing.T) {
 		{
 			name:      "valid",
 			rawConfig: goodConfig,
-			timeout:   goodTimeout,
 			wantConfig: Config{
-				Entrypoint:       []string{},
+				Cmd:              []string{},
 				Token:            secret.String("testtoken"),
 				TaskAgentPath:    "/path/to/agent",
 				RunnerAPIBaseURL: "https://example.com/api",
@@ -54,12 +52,10 @@ func Test_ReadFromStdin(t *testing.T) {
 		{
 			name:      "invalid",
 			rawConfig: `not a valid JSON string`,
-			timeout:   goodTimeout,
 			wantError: "failed to unmarshal config",
 		},
 		{
 			name:      "invalid checksum",
-			timeout:   goodTimeout,
 			rawConfig: `{"token": "tasktoken","token_checksum": "invalid"}`,
 			wantError: "invalid checksum on config token",
 		},
@@ -73,19 +69,22 @@ func Test_ReadFromStdin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configReadTimeout = tt.timeout
-
 			config := Config{}
 
-			// Simulate Stdin
 			r, w, _ := os.Pipe()
-			os.Stdin = r
-			_, err := w.Write([]byte(tt.rawConfig))
-			assert.NilError(t, err)
-			err = w.Close()
-			assert.NilError(t, err)
 
-			err = config.ReadFromStdin(ctx)
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				_, err := w.Write([]byte(tt.rawConfig))
+				assert.NilError(t, err)
+				assert.NilError(t, w.Close())
+			}()
+
+			if tt.timeout == 0 {
+				tt.timeout = 20 * time.Second
+			}
+
+			err := config.ReadFrom(ctx, r, tt.timeout)
 			if tt.wantError == "" {
 				assert.NilError(t, err)
 				assert.Check(t, cmp.DeepEqual(config, tt.wantConfig, cmpopts.IgnoreFields(Config{}, "TokenChecksum")))
@@ -96,7 +95,7 @@ func Test_ReadFromStdin(t *testing.T) {
 	}
 }
 
-func Test_TaskAgentCmd(t *testing.T) {
+func Test_Agent(t *testing.T) {
 	config := &Config{
 		TaskAgentPath:    "/path/to/agent",
 		RunnerAPIBaseURL: "https://example.com/api",
@@ -105,10 +104,29 @@ func Test_TaskAgentCmd(t *testing.T) {
 		SSHAdvertiseAddr: "192.168.1.1",
 	}
 
-	expectedCmd := "PATH=$PATH:/path/to /path/to/agent _internal " +
-		"agent-runner --verbose --runnerAPIBaseURL=https://example.com/api " +
-		"--allocation=testallocation --disableSpinUpStep --disableIsolatedSSHDir " +
-		"--maxRunTime=3600 --sshAdvertiseAddr=192.168.1.1"
+	expectedCmd := []string{
+		"/path/to/agent",
+		"_internal",
+		"agent-runner",
+		"--verbose",
+		"--runnerAPIBaseURL=https://example.com/api",
+		"--allocation=testallocation",
+		"--disableSpinUpStep",
+		"--disableIsolatedSSHDir",
+		"--maxRunTime=1h0m0s",
+		"--sshAdvertiseAddr=192.168.1.1",
+	}
 
-	assert.Check(t, cmp.Equal(config.TaskAgentCmd(), expectedCmd))
+	expectedEnv := []string{
+		"PATH=$PATH:/path/to",
+	}
+
+	expectedAgent := Agent{
+		Cmd: expectedCmd,
+		Env: expectedEnv,
+	}
+
+	agent := config.Agent()
+
+	assert.Check(t, cmp.DeepEqual(agent, expectedAgent))
 }
