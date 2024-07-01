@@ -14,7 +14,7 @@ import (
 func TestRunTask(t *testing.T) {
 	in := stdin(t)
 	r := runner.New(
-		"SHUTDOWN_DELAY=0",
+		"SHUTDOWN_DELAY=10s",
 		"STDIN="+in.Name(),
 	)
 	res, err := r.Start(orchestratorTestBinaryRunTask)
@@ -22,7 +22,8 @@ func TestRunTask(t *testing.T) {
 
 	goodConfig := fmt.Sprintf(`
 {
-	"entrypoint": [],
+	"cmd": [],
+	"enable_unsafe_retries": false,
 	"token": "testtoken",
 	"task_agent_path": "%v",
 	"runner_api_base_url": "https://runner.circleci.com",
@@ -44,7 +45,7 @@ func TestRunTask(t *testing.T) {
 		select {
 		case err = <-res.Wait():
 			assert.NilError(t, err)
-		case <-time.After(time.Second * 20):
+		case <-time.After(time.Second * 40):
 			assert.NilError(t, res.Stop())
 			t.Fatal(t, "timeout before process stopped")
 		}

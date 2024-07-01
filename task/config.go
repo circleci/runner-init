@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,10 +14,9 @@ import (
 	"github.com/goccy/go-json"
 )
 
-var configReadTimeout = 2 * time.Minute
-
 type Config struct {
-	Entrypoint []string `json:"entrypoint"`
+	Cmd                 []string `json:"cmd"`
+	EnableUnsafeRetries bool     `json:"enable_unsafe_retries"`
 
 	// Task agent configuration
 	Token            secret.String `json:"token"`
@@ -32,13 +30,13 @@ type Config struct {
 	TokenChecksum string `json:"token_checksum"`
 }
 
-func (c *Config) ReadFromStdin(ctx context.Context) error {
+func (c *Config) ReadFrom(ctx context.Context, in io.Reader, timeout time.Duration) error {
 	bytesCh := make(chan []byte, 1)
 	errCh := make(chan error, 1)
 
 	go func() {
 		for {
-			bytes, err := io.ReadAll(os.Stdin)
+			bytes, err := io.ReadAll(in)
 			if err != nil {
 				errCh <- fmt.Errorf("failed to read config from stdin: %w", err)
 				return
@@ -58,7 +56,7 @@ func (c *Config) ReadFromStdin(ctx context.Context) error {
 		if err := json.Unmarshal(bytes, c); err != nil {
 			return fmt.Errorf("failed to unmarshal config: %w", err)
 		}
-	case <-time.After(configReadTimeout):
+	case <-time.After(timeout):
 		return fmt.Errorf("timed out reading config from stdin: %w", ctx.Err())
 	}
 
@@ -76,7 +74,12 @@ func (c *Config) validateTokenChecksum() bool {
 	return c.TokenChecksum == hex.EncodeToString(hasher.Sum(nil))
 }
 
-func (c *Config) TaskAgentCmd() string {
+type Agent struct {
+	Cmd []string
+	Env []string
+}
+
+func (c *Config) Agent() Agent {
 	args := []string{
 		"_internal",
 		"agent-runner",
@@ -85,11 +88,18 @@ func (c *Config) TaskAgentCmd() string {
 		"--allocation=" + c.Allocation,
 		"--disableSpinUpStep",
 		"--disableIsolatedSSHDir",
-		fmt.Sprintf("--maxRunTime=%v", c.MaxRunTime.Seconds()),
+		fmt.Sprintf("--maxRunTime=%v", c.MaxRunTime),
 	}
 	if c.SSHAdvertiseAddr != "" {
 		args = append(args, "--sshAdvertiseAddr="+c.SSHAdvertiseAddr)
 	}
-	cmd := fmt.Sprintf("PATH=$PATH:%s %s %s", filepath.Dir(c.TaskAgentPath), c.TaskAgentPath, strings.Join(args, " "))
-	return cmd
+
+	cmd := append(strings.Split(c.TaskAgentPath, " "), args...)
+
+	env := []string{fmt.Sprintf("PATH=$PATH:%s", filepath.Dir(c.TaskAgentPath))}
+
+	return Agent{
+		Cmd: cmd,
+		Env: env,
+	}
 }
