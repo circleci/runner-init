@@ -33,8 +33,9 @@ type initCmd struct {
 }
 
 type runTaskCmd struct {
-	Stdin           *os.File `env:"STDIN" default:"-" hidden:""`
-	HealthCheckAddr string   `env:"HEALTH_CHECK_ADDR" default:"localhost:7623" help:"Address for the health check API to listen on."`
+	Stdin                  *os.File      `env:"STDIN" default:"-" hidden:""`
+	TerminationGracePeriod time.Duration `env:"TERMINATION_GRACE_PERIOD" default:"20s" help:"How long the agent will wait for the task to complete if interrupted."`
+	HealthCheckAddr        string        `env:"HEALTH_CHECK_ADDR" default:"localhost:7623" help:"Address for the health check API to listen on."`
 }
 
 func main() {
@@ -98,8 +99,7 @@ func runSetup(ctx context.Context, cli cli, sys *system.System) (*task.Orchestra
 
 	os.Stdin = c.Stdin
 
-	o := task.NewOrchestrator(os.Stdin)
-	sys.AddService(o.Cleanup)
+	o := task.NewOrchestrator(os.Stdin, cli.RunTask.TerminationGracePeriod)
 	sys.AddHealthCheck(o)
 
 	if _, err := healthcheck.Load(ctx, cli.RunTask.HealthCheckAddr, sys); err != nil {

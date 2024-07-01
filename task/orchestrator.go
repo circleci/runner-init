@@ -18,8 +18,9 @@ import (
 )
 
 type Orchestrator struct {
-	config   Config
-	configIn io.Reader
+	config                 Config
+	configIn               io.Reader
+	terminationGracePeriod time.Duration
 
 	ready      atomic.Bool
 	agentPid   atomic.Int64
@@ -27,26 +28,44 @@ type Orchestrator struct {
 	cancelMu   sync.RWMutex
 }
 
-func NewOrchestrator(configIn io.Reader) *Orchestrator {
+func NewOrchestrator(configIn io.Reader, terminationGracePeriod time.Duration) *Orchestrator {
 	return &Orchestrator{
-		config:     Config{},
-		configIn:   configIn,
-		cancelTask: func() {},
+		config:                 Config{},
+		configIn:               configIn,
+		cancelTask:             func() {},
+		terminationGracePeriod: terminationGracePeriod,
 	}
 }
 
-func (o *Orchestrator) Run(ctx context.Context) error {
-	ctx = o.taskContext(ctx)
+func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
+	ctx := o.taskContext(parentCtx)
 
-	if err := o.setup(ctx); err != nil {
-		return fmt.Errorf("failed setup for task: %w", err)
+	defer func() {
+		err = errors.Join(err, o.cleanup(ctx))
+	}()
+
+	errCh := make(chan error, 1)
+	go func() {
+		if err := o.setup(ctx); err != nil {
+			errCh <- fmt.Errorf("failed setup for task: %w", err)
+		}
+		if err := o.executeAgent(ctx); err != nil {
+			errCh <- fmt.Errorf("error while executing task agent: %w", err)
+		}
+		errCh <- nil
+	}()
+
+	select {
+	case err = <-errCh:
+	case <-parentCtx.Done():
+		select {
+		case <-time.After(o.terminationGracePeriod):
+			o11y.Log(ctx, "termination grace period is over")
+		case err = <-errCh:
+		}
 	}
 
-	if err := o.executeAgent(ctx); err != nil {
-		return fmt.Errorf("error while executing task agent: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
@@ -66,7 +85,7 @@ func (o *Orchestrator) setup(ctx context.Context) error {
 
 	// Read in the configuration (usually from stdin)
 	if err := o.config.ReadFrom(ctx, o.configIn, 2*time.Minute); err != nil {
-		return err
+		return newRetryableError(err)
 	}
 
 	if len(o.config.Cmd) > 0 {
@@ -90,15 +109,15 @@ func (o *Orchestrator) executeAgent(ctx context.Context) error {
 	c := o.newCmd(ctx, agent.Cmd, agent.Env...)
 
 	if err := o.loadToken(c); err != nil {
-		return fmt.Errorf("failed to load task token: %w", err)
+		return retryableErrorf("failed to load task token: %w", err)
 	}
 
 	// Start and wait for the task agent process to exit
 	if err := c.Start(); err != nil {
-		return fmt.Errorf("failed to start task agent command: %w", err)
+		return retryableErrorf("failed to start task agent command: %w", err)
 	}
 	if c.Process == nil {
-		return errors.New("no process associated with task agent command")
+		return retryableErrorf("no process associated with task agent command")
 	}
 	// Store the task agent PID so that we can inspect the process later on cleanup
 	o.agentPid.Store(int64(c.Process.Pid))
@@ -159,7 +178,7 @@ func (o *Orchestrator) maybeSwitchUser(ctx context.Context, c *exec.Cmd) {
 	}
 }
 
-func (o *Orchestrator) Cleanup(_ context.Context) error {
+func (o *Orchestrator) cleanup(_ context.Context) error {
 	defer func() {
 		// Cancelling the context terminates the task agent and custom entrypoint commands
 		o.cancelMu.RLock()
@@ -171,7 +190,7 @@ func (o *Orchestrator) Cleanup(_ context.Context) error {
 	if pid > 0 {
 		if p, err := os.FindProcess(int(pid)); err == nil {
 			if err := p.Signal(os.Signal(syscall.Signal(0))); err == nil {
-				return errors.New("error on shutdown: task agent process is still running and may interrupt the task")
+				return errors.New("task agent process is still running and may interrupt the task")
 			} else if !errors.Is(err, os.ErrProcessDone) {
 				return fmt.Errorf("unexpected error while signaling task agent process; %w", err)
 			}
@@ -189,4 +208,16 @@ func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Co
 			}
 			return nil
 		}, nil
+}
+
+type retryableError struct {
+	error
+}
+
+func newRetryableError(err error) retryableError {
+	return retryableError{err}
+}
+
+func retryableErrorf(format string, a ...any) retryableError {
+	return retryableError{fmt.Errorf(format, a...)}
 }
