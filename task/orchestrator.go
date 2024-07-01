@@ -56,16 +56,19 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 	}()
 
 	select {
-	case err = <-errCh:
+	case err := <-errCh:
+		return err
 	case <-parentCtx.Done():
+		// If the parent context is canceled, wait for the termination grace period before shutting down.
+		// This is in case the task completes within that period.
 		select {
+		case err := <-errCh:
+			return err
 		case <-time.After(o.terminationGracePeriod):
 			o11y.Log(ctx, "termination grace period is over")
-		case err = <-errCh:
+			return err
 		}
 	}
-
-	return err
 }
 
 func (o *Orchestrator) taskContext(ctx context.Context) context.Context {

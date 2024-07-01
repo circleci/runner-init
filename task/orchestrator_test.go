@@ -33,9 +33,10 @@ func TestOrchestrator(t *testing.T) {
 	tests := []struct {
 		name string
 
-		config  string
-		env     map[string]string
-		timeout time.Duration
+		config      string
+		env         map[string]string
+		gracePeriod time.Duration
+		timeout     time.Duration
 
 		wantError   string
 		wantTimeout bool
@@ -60,6 +61,13 @@ func TestOrchestrator(t *testing.T) {
 					assert.NilError(t, err, "expected custom command to create file")
 				},
 			},
+		},
+		{
+			name:        "finish within grace period",
+			config:      defaultConfig,
+			timeout:     500 * time.Millisecond,
+			gracePeriod: 2 * time.Second,
+			wantError:   "",
 		},
 		{
 			name:      "error: invalid config",
@@ -113,7 +121,7 @@ func TestOrchestrator(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, tt.timeout)
 			defer cancel()
 
-			o := NewOrchestrator(r, tt.timeout)
+			o := NewOrchestrator(r, tt.gracePeriod)
 			err := o.Run(ctx)
 
 			if tt.wantError != "" {
