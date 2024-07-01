@@ -96,7 +96,7 @@ issues:
       source: '"message":'
     # Very long lines are ok if they're in CLI config
     - linters: [ lll ]
-      source: 'env:"'
+      source: 'help:"'
     # Ignore errcheck on a deferred Close
     - linters: [errcheck]
       source: ^\s*defer .*\.Close(.*)$

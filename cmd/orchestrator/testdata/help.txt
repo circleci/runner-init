@@ -2,8 +2,10 @@ Usage: test-app <command> [flags]
 
 Flags:
   -h, --help                 Show context-sensitive help.
-  -v, --version              Print version information and quit.
-      --shutdown-delay=0s    Delay shutdown by this amount ($SHUTDOWN_DELAY).
+  -v, --version              Print version information and quit
+                             ($CIRCLECI_GOAT_VERSION).
+      --shutdown-delay=0s    Delay shutdown by this amount
+                             ($CIRCLECI_GOAT_SHUTDOWN_DELAY).
 
 Commands:
   init [<source> [<destination>]] [flags]

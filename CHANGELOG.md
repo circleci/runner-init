@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#27](https://github.com/circleci/runner-init/pull/27) [INTERNAL] Pass orchestrator configuration through an environment variable from a Kubernetes Secret. This variable is stripped from the environment that is passed to the task agent command to prevent token leakage in the task environment.
 - [#26](https://github.com/circleci/runner-init/pull/26) [INTERNAL] Handle shutdown of a task with a termination grace period.
 - [#25](https://github.com/circleci/runner-init/pull/25) [INTERNAL] Implement the ability to execute a task and a custom entrypoint.
 - [#24](https://github.com/circleci/runner-init/pull/24) [INTERNAL] Add checksum validation of the task token to help detect transmission errors.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,17 +24,14 @@ func TestOrchestrator(t *testing.T) {
 
 	testPath := os.Args[0]
 	scratchDir := t.TempDir()
-	defaultConfig := fmt.Sprintf(`
-{
-	"token": "testtoken",
-	"task_agent_path": "%s -test.run=TestOrchestrator",
-	"token_checksum": "ada63e98fe50eccb55036d88eda4b2c3709f53c2b65bc0335797067e9a2a5d8b"
-}`, testPath)
-
+	defaultConfig := Config{
+		Token:         "testtoken",
+		TaskAgentPath: testPath + " -test.run=TestOrchestrator",
+	}
 	tests := []struct {
 		name string
 
-		config      string
+		config      Config
 		env         map[string]string
 		gracePeriod time.Duration
 		timeout     time.Duration
@@ -43,18 +41,19 @@ func TestOrchestrator(t *testing.T) {
 		extraChecks []func(t *testing.T)
 	}{
 		{
-			name:   "happy path",
+			name: "happy path",
+			env: map[string]string{
+				"CIRCLECI_GOAT_CONFIG": "{}",
+			},
 			config: defaultConfig,
 		},
 		{
 			name: "custom command",
-			config: fmt.Sprintf(`
-{
-	"cmd": ["/bin/sh", "-c", "touch %s/testfile"],
-	"token": "testtoken",
-	"task_agent_path": "%s -test.run=TestOrchestrator",
-	"token_checksum": "ada63e98fe50eccb55036d88eda4b2c3709f53c2b65bc0335797067e9a2a5d8b"
-}`, scratchDir, testPath),
+			config: Config{
+				Cmd:           []string{"/bin/sh", "-c", fmt.Sprintf("touch %s/testfile", scratchDir)},
+				Token:         "testtoken",
+				TaskAgentPath: testPath + " -test.run=TestOrchestrator",
+			},
 			extraChecks: []func(t *testing.T){
 				func(t *testing.T) {
 					_, err := os.Stat(scratchDir + "/testfile")
@@ -68,11 +67,6 @@ func TestOrchestrator(t *testing.T) {
 			timeout:     500 * time.Millisecond,
 			gracePeriod: 2 * time.Second,
 			wantError:   "",
-		},
-		{
-			name:      "error: invalid config",
-			config:    `a bad config`,
-			wantError: "failed setup for task: failed to unmarshal config",
 		},
 		{
 			name:   "error: interrupted task",
@@ -102,18 +96,6 @@ func TestOrchestrator(t *testing.T) {
 				t.Setenv(k, v)
 			}
 
-			r, w, _ := os.Pipe()
-			os.Stdin = r
-
-			go func() {
-				// Load config in background
-				time.Sleep(100 * time.Millisecond)
-
-				_, err := w.Write([]byte(tt.config))
-				assert.NilError(t, err)
-				assert.NilError(t, w.Close())
-			}()
-
 			ctx := testcontext.Background()
 			if tt.timeout == 0 {
 				tt.timeout = 20 * time.Second
@@ -121,7 +103,7 @@ func TestOrchestrator(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, tt.timeout)
 			defer cancel()
 
-			o := NewOrchestrator(r, tt.gracePeriod)
+			o := NewOrchestrator(tt.config, tt.gracePeriod)
 			err := o.Run(ctx)
 
 			if tt.wantError != "" {
@@ -142,6 +124,11 @@ func beTaskAgent(t *testing.T) {
 
 	assert.Check(t, cmp.Equal(os.Args[2], "_internal"))
 	assert.Check(t, cmp.Equal(os.Args[3], "agent-runner"))
+
+	for _, env := range os.Environ() {
+		assert.Check(t, !strings.Contains(env, "CIRCLECI_GOAT"),
+			"orchestrator configuration shouldn't be in the task environment")
+	}
 
 	b, err := io.ReadAll(os.Stdin)
 	assert.NilError(t, err)
