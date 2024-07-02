@@ -24,7 +24,7 @@ type cli struct {
 	Init    initCmd    `cmd:"" name:"init" default:"withargs"`
 	RunTask runTaskCmd `cmd:"" name:"run-task"`
 
-	ShutdownDelay time.Duration `env:"SHUTDOWN_DELAY" default:"0s" help:"Delay shutdown by this amount."`
+	ShutdownDelay time.Duration `default:"0s" help:"Delay shutdown by this amount."`
 }
 
 type initCmd struct {
@@ -33,9 +33,11 @@ type initCmd struct {
 }
 
 type runTaskCmd struct {
-	Stdin                  *os.File      `env:"STDIN" default:"-" hidden:""`
-	TerminationGracePeriod time.Duration `env:"TERMINATION_GRACE_PERIOD" default:"20s" help:"How long the agent will wait for the task to complete if interrupted."`
-	HealthCheckAddr        string        `env:"HEALTH_CHECK_ADDR" default:"localhost:7623" help:"Address for the health check API to listen on."`
+	TerminationGracePeriod time.Duration `default:"20s" help:"How long the agent will wait for the task to complete if interrupted."`
+	HealthCheckAddr        string        `default:"localhost:7623" help:"Address for the health check API to listen on."`
+
+	// Task environment configuration should be injected through a Kubernetes Secret
+	Config task.Config `required:"" hidden:"-"`
 }
 
 func main() {
@@ -47,6 +49,7 @@ func main() {
 func run(version, date string) (err error) {
 	cli := cli{}
 	kongCtx := kong.Parse(&cli,
+		kong.DefaultEnvars("CIRCLECI_GOAT"),
 		kong.Vars{
 			"version": fmt.Sprintf("%s version %s (built %s)", "runner-init", version, date),
 		})
@@ -93,16 +96,16 @@ func run(version, date string) (err error) {
 func runSetup(ctx context.Context, cli cli, sys *system.System) (*task.Orchestrator, error) {
 	c := cli.RunTask
 
+	_ = os.Unsetenv("CIRCLECI_GOAT_CONFIG")
+
 	if err := cmd.UpdateDefaultTransport(ctx); err != nil {
 		return nil, fmt.Errorf("failed to load rootcerts: %w", err)
 	}
 
-	os.Stdin = c.Stdin
-
-	o := task.NewOrchestrator(os.Stdin, cli.RunTask.TerminationGracePeriod)
+	o := task.NewOrchestrator(c.Config, c.TerminationGracePeriod)
 	sys.AddHealthCheck(o)
 
-	if _, err := healthcheck.Load(ctx, cli.RunTask.HealthCheckAddr, sys); err != nil {
+	if _, err := healthcheck.Load(ctx, c.HealthCheckAddr, sys); err != nil {
 		return nil, fmt.Errorf("failed to load health check API: %w", err)
 	}
 

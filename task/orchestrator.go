@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"os/user"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -18,9 +18,8 @@ import (
 )
 
 type Orchestrator struct {
-	config                 Config
-	configIn               io.Reader
-	terminationGracePeriod time.Duration
+	config      Config
+	gracePeriod time.Duration
 
 	ready      atomic.Bool
 	agentPid   atomic.Int64
@@ -28,12 +27,11 @@ type Orchestrator struct {
 	cancelMu   sync.RWMutex
 }
 
-func NewOrchestrator(configIn io.Reader, terminationGracePeriod time.Duration) *Orchestrator {
+func NewOrchestrator(config Config, gracePeriod time.Duration) *Orchestrator {
 	return &Orchestrator{
-		config:                 Config{},
-		configIn:               configIn,
-		cancelTask:             func() {},
-		terminationGracePeriod: terminationGracePeriod,
+		config:      config,
+		gracePeriod: gracePeriod,
+		cancelTask:  func() {},
 	}
 }
 
@@ -44,11 +42,10 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 		err = errors.Join(err, o.cleanup(ctx))
 	}()
 
+	o.setup(ctx)
+
 	errCh := make(chan error, 1)
 	go func() {
-		if err := o.setup(ctx); err != nil {
-			errCh <- fmt.Errorf("failed setup for task: %w", err)
-		}
 		if err := o.executeAgent(ctx); err != nil {
 			errCh <- fmt.Errorf("error while executing task agent: %w", err)
 		}
@@ -64,7 +61,7 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 		select {
 		case err := <-errCh:
 			return err
-		case <-time.After(o.terminationGracePeriod):
+		case <-time.After(o.gracePeriod):
 			o11y.Log(ctx, "termination grace period is over")
 			return err
 		}
@@ -82,21 +79,14 @@ func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (o *Orchestrator) setup(ctx context.Context) error {
-	// Signal the orchestrator is ready to read in its configuration
-	o.ready.Store(true)
-
-	// Read in the configuration (usually from stdin)
-	if err := o.config.ReadFrom(ctx, o.configIn, 2*time.Minute); err != nil {
-		return newRetryableError(err)
-	}
-
+func (o *Orchestrator) setup(ctx context.Context) {
 	if len(o.config.Cmd) > 0 {
 		// If a custom command is specified, execute it in the background
 		go o.executeCmd(ctx)
 	}
 
-	return nil
+	// Signal the orchestrator is ready and will start the task agent process
+	o.ready.Store(true)
 }
 
 func (o *Orchestrator) executeCmd(ctx context.Context) {
@@ -152,10 +142,18 @@ func (o *Orchestrator) loadToken(c *exec.Cmd) error {
 func (o *Orchestrator) newCmd(ctx context.Context, cmd []string, env ...string) *exec.Cmd {
 	//#nosec:G204 // this is intentionally setting up a command
 	c := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
-	c.Env = append(c.Env, os.Environ()...)
+
+	for _, env := range os.Environ() {
+		if strings.HasPrefix(env, "CIRCLECI_GOAT") {
+			// Prevent orchestrator configuration from being injected in the task environment
+			continue
+		}
+		c.Env = append(c.Env, env)
+	}
 	if env != nil {
 		c.Env = append(c.Env, env...)
 	}
+
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
@@ -215,10 +213,6 @@ func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Co
 
 type retryableError struct {
 	error
-}
-
-func newRetryableError(err error) retryableError {
-	return retryableError{err}
 }
 
 func retryableErrorf(format string, a ...any) retryableError {
