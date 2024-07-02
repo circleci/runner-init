@@ -49,6 +49,7 @@ func help(t *testing.T, cli interface{}) string {
 	w := bytes.NewBuffer(nil)
 	rc := -1
 	app, err := kong.New(cli,
+		kong.DefaultEnvars("CIRCLECI_GOAT"),
 		kong.Name("test-app"),
 		kong.Writers(w, w),
 		kong.Exit(func(i int) {
