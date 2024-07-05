@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#31](https://github.com/circleci/runner-init/pull/31) [INTERNAL] Wait on the task context finishing to stop the process reaper since the parent context can get cancelled first.
 - [#30](https://github.com/circleci/runner-init/pull/30) [INTERNAL] Add init-like behaviour (reaping child subprocesses to prevent them from becoming zombie processes) to the task orchestrator.
 - [#28](https://github.com/circleci/runner-init/pull/28) [INTERNAL] Pass orchestrator configuration through an environment variable from a Kubernetes Secret. This variable is stripped from the environment that is passed to the task agent command to prevent token leakage in the task environment.
 - [#27](https://github.com/circleci/runner-init/pull/27) [INTERNAL] Handle shutdown of a task with a termination grace period.

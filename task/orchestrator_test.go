@@ -22,6 +22,8 @@ func TestOrchestrator(t *testing.T) {
 		return
 	}
 
+	reapTime = 0 // set the process reap time to 0 to prevent interference between test cases
+
 	testPath := os.Args[0]
 	scratchDir := t.TempDir()
 	defaultConfig := Config{

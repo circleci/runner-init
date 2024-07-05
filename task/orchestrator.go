@@ -38,11 +38,11 @@ func NewOrchestrator(config Config, gracePeriod time.Duration) *Orchestrator {
 }
 
 func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
+	ctx := o.taskContext(parentCtx)
+
 	// Take the reap lock so the process reaper doesn't steal the return value from Go exec
 	o.reapMu.RLock()
-	go o.reapChildProcesses(parentCtx)
-
-	ctx := o.taskContext(parentCtx)
+	go o.reapChildProcesses(ctx)
 
 	defer func() {
 		err = errors.Join(err, o.cleanup(ctx))
@@ -206,6 +206,8 @@ func (o *Orchestrator) cleanup(_ context.Context) error {
 	return nil
 }
 
+var reapTime = 10 * time.Second // can be overridden by tests
+
 // Reap any child processes that may be spawned by the task
 func (o *Orchestrator) reapChildProcesses(ctx context.Context) {
 	if !reap.IsSupported() {
@@ -213,11 +215,15 @@ func (o *Orchestrator) reapChildProcesses(ctx context.Context) {
 		return
 	}
 
-	done := make(chan struct{}, 1)
-
+	done := make(chan struct{})
 	go reap.ReapChildren(nil, nil, done, &o.reapMu)
 
-	done <- <-ctx.Done()
+	<-ctx.Done() // block until the task is completed
+
+	// Give a moment to reap (note that since this is in a goroutine, this won't block the main thread from exiting)
+	time.Sleep(reapTime)
+
+	close(done)
 }
 
 func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Context) error) {
