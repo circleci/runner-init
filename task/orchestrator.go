@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/circleci/ex/o11y"
+	"github.com/hashicorp/go-reap"
 )
 
 type Orchestrator struct {
@@ -25,6 +26,7 @@ type Orchestrator struct {
 	agentPid   atomic.Int64
 	cancelTask context.CancelFunc
 	cancelMu   sync.RWMutex
+	reapMu     sync.RWMutex
 }
 
 func NewOrchestrator(config Config, gracePeriod time.Duration) *Orchestrator {
@@ -36,16 +38,29 @@ func NewOrchestrator(config Config, gracePeriod time.Duration) *Orchestrator {
 }
 
 func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
+	// Take the reap lock so the process reaper doesn't steal the return value from Go exec
+	o.reapMu.RLock()
+	go o.reapChildProcesses(parentCtx)
+
 	ctx := o.taskContext(parentCtx)
 
 	defer func() {
 		err = errors.Join(err, o.cleanup(ctx))
 	}()
 
-	o.setup(ctx)
+	if len(o.config.Cmd) > 0 {
+		// If a custom command is specified, execute it in the background
+		go o.executeCmd(ctx)
+	}
+
+	// Signal the orchestrator is ready and will start the task agent process
+	o.ready.Store(true)
 
 	errCh := make(chan error, 1)
 	go func() {
+		// We no longer require the reap lock once the task agent process has completed
+		defer o.reapMu.RUnlock()
+
 		if err := o.executeAgent(ctx); err != nil {
 			errCh <- fmt.Errorf("error while executing task agent: %w", err)
 		}
@@ -77,16 +92,6 @@ func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
 	// but still make sure any task resources are released.
 	ctx, o.cancelTask = context.WithCancel(o11y.WithProvider(context.Background(), o11y.FromContext(ctx)))
 	return ctx
-}
-
-func (o *Orchestrator) setup(ctx context.Context) {
-	if len(o.config.Cmd) > 0 {
-		// If a custom command is specified, execute it in the background
-		go o.executeCmd(ctx)
-	}
-
-	// Signal the orchestrator is ready and will start the task agent process
-	o.ready.Store(true)
 }
 
 func (o *Orchestrator) executeCmd(ctx context.Context) {
@@ -199,6 +204,20 @@ func (o *Orchestrator) cleanup(_ context.Context) error {
 	}
 
 	return nil
+}
+
+// Reap any child processes that may be spawned by the task
+func (o *Orchestrator) reapChildProcesses(ctx context.Context) {
+	if !reap.IsSupported() {
+		o11y.Log(ctx, "child process reaping is unsupported - this may result in zombie processes")
+		return
+	}
+
+	done := make(chan struct{}, 1)
+
+	go reap.ReapChildren(nil, nil, done, &o.reapMu)
+
+	done <- <-ctx.Done()
 }
 
 func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Context) error) {

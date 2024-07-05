@@ -7,6 +7,7 @@ toolchain go1.22.4
 require (
 	github.com/alecthomas/kong v0.9.0
 	github.com/goccy/go-json v0.10.3
+	github.com/hashicorp/go-reap v0.0.0-20230117204525-bf69c61a7b71
 	gotest.tools/v3 v3.5.1
 )
 
