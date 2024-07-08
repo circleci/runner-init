@@ -71,7 +71,7 @@ jobs:
     executor: go
     steps:
       - setup
-      - run: ./do test
+      - run: ./do test ./... -count 3
       - notify_failing_main
 
   build:

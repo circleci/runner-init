@@ -186,7 +186,7 @@ func (o *Orchestrator) maybeSwitchUser(ctx context.Context, c *exec.Cmd) {
 
 func (o *Orchestrator) cleanup(_ context.Context) error {
 	defer func() {
-		// Cancelling the context terminates the task agent and custom entrypoint commands
+		// Cancelling the context terminates the task agent and custom entrypoint commands (if still running)
 		o.cancelMu.RLock()
 		defer o.cancelMu.RUnlock()
 		o.cancelTask()
@@ -197,8 +197,9 @@ func (o *Orchestrator) cleanup(_ context.Context) error {
 		if p, err := os.FindProcess(int(pid)); err == nil {
 			if err := p.Signal(os.Signal(syscall.Signal(0))); err == nil {
 				return errors.New("task agent process is still running and may interrupt the task")
+
 			} else if !errors.Is(err, os.ErrProcessDone) {
-				return fmt.Errorf("unexpected error while signaling task agent process; %w", err)
+				return fmt.Errorf("unexpected error while signaling task agent process: %w", err)
 			}
 		}
 	}
@@ -216,14 +217,14 @@ func (o *Orchestrator) reapChildProcesses(ctx context.Context) {
 	}
 
 	done := make(chan struct{})
+	defer close(done)
+
 	go reap.ReapChildren(nil, nil, done, &o.reapMu)
 
 	<-ctx.Done() // block until the task is completed
 
 	// Give a moment to reap (note that since this is in a goroutine, this won't block the main thread from exiting)
 	time.Sleep(reapTime)
-
-	close(done)
 }
 
 func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Context) error) {
