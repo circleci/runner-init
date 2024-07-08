@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )
+
+var testOnce sync.Once
 
 func TestOrchestrator(t *testing.T) {
 	if os.Getenv("BE_TASK_AGENT") == "true" {
@@ -22,7 +25,10 @@ func TestOrchestrator(t *testing.T) {
 		return
 	}
 
-	reapTime = 0 // set the process reap time to 0 to prevent interference between test cases
+	testOnce.Do(func() {
+		// Set the process reap time to 0 to prevent interference between test cases
+		reapTime = 0
+	})
 
 	testPath := os.Args[0]
 	scratchDir := t.TempDir()
