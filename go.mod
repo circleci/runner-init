@@ -7,6 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/alecthomas/kong v0.9.0
 	github.com/goccy/go-json v0.10.3
+	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-reap v0.0.0-20230117204525-bf69c61a7b71
 	gotest.tools/v3 v3.5.1
 )
@@ -22,7 +23,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hellofresh/health-go/v5 v5.5.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect

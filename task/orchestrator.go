@@ -16,11 +16,14 @@ import (
 
 	"github.com/circleci/ex/o11y"
 	"github.com/hashicorp/go-reap"
+
+	"github.com/circleci/runner-init/clients/runner"
 )
 
 type Orchestrator struct {
-	config      Config
-	gracePeriod time.Duration
+	config       Config
+	runnerClient *runner.Client // TODO: actually use this to retry or fail tasks (as needed)
+	gracePeriod  time.Duration
 
 	ready      atomic.Bool
 	agentPid   atomic.Int64
@@ -29,11 +32,16 @@ type Orchestrator struct {
 	reapMu     sync.RWMutex
 }
 
-func NewOrchestrator(config Config, gracePeriod time.Duration) *Orchestrator {
+func NewOrchestrator(config Config, runnerClient *runner.Client, gracePeriod time.Duration) *Orchestrator {
+	if runnerClient == nil {
+		panic("runner API client is unset")
+	}
+
 	return &Orchestrator{
-		config:      config,
-		gracePeriod: gracePeriod,
-		cancelTask:  func() {},
+		config:       config,
+		runnerClient: runnerClient,
+		gracePeriod:  gracePeriod,
+		cancelTask:   func() {},
 	}
 }
 
