@@ -15,6 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
+
+	"github.com/circleci/runner-init/internal/testing/fakerunnerapi"
 )
 
 func TestClient_UnclaimTask(t *testing.T) {
@@ -23,25 +25,33 @@ func TestClient_UnclaimTask(t *testing.T) {
 		Token string `json:"task_token"`
 	}
 
+	var (
+		goodTask = fakerunnerapi.Task{
+			Token:        "testtoken",
+			ID:           "good",
+			UnclaimCount: 0,
+		}
+		exhaustedTask = fakerunnerapi.Task{
+			Token:        "anothertesttoken",
+			ID:           "exhausted",
+			UnclaimCount: 3,
+		}
+	)
+
 	tests := []struct {
 		name string
 
-		taskID       string
-		token        secret.String
-		httpResponse func(w http.ResponseWriter)
+		taskID string
+		token  secret.String
 
 		wantRequests []httprecorder.Request
-		wantErr      string
+		wantError    string
 	}{
 		{
-			name: "successfully",
+			name: "success",
 
-			taskID: "5384e98c-f3f0-4228-b6cd-fa105b2c96f2",
-			token:  "9968caca-002b-4d57-a66b-44948587f823",
-			httpResponse: func(w http.ResponseWriter) {
-				w.WriteHeader(http.StatusOK)
-			},
-
+			taskID: goodTask.ID,
+			token:  goodTask.Token,
 			wantRequests: []httprecorder.Request{
 				{
 					Method: "POST",
@@ -50,8 +60,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 						"Content-Type": {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, unclaim{
-						ID:    "5384e98c-f3f0-4228-b6cd-fa105b2c96f2",
-						Token: "9968caca-002b-4d57-a66b-44948587f823",
+						ID:    goodTask.ID,
+						Token: goodTask.Token.Raw(),
 					}),
 				},
 			},
@@ -59,11 +69,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 		{
 			name: "exhausted all retries",
 
-			taskID: "f941f7b4-c3f3-4b42-b14d-2b201d60dd8d",
-			token:  "fa72e0b5-52cd-49d0-a1fa-342c92729885",
-			httpResponse: func(w http.ResponseWriter) {
-				w.WriteHeader(http.StatusConflict)
-			},
+			taskID: exhaustedTask.ID,
+			token:  exhaustedTask.Token,
 
 			wantRequests: []httprecorder.Request{
 				{
@@ -73,21 +80,18 @@ func TestClient_UnclaimTask(t *testing.T) {
 						"Content-Type": {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, unclaim{
-						ID:    "f941f7b4-c3f3-4b42-b14d-2b201d60dd8d",
-						Token: "fa72e0b5-52cd-49d0-a1fa-342c92729885",
+						ID:    exhaustedTask.ID,
+						Token: exhaustedTask.Token.Raw(),
 					}),
 				},
 			},
-			wantErr: ErrExhaustedTaskRetries.Error(),
+			wantError: ErrExhaustedTaskRetries.Error(),
 		},
 		{
-			name: "some generic error",
+			name: "not found",
 
-			taskID: "93f549d5-aad2-4a7a-ba34-e85f750b50fd",
-			token:  "54ad5c4e-331b-4010-9309-f8fc5e042130",
-			httpResponse: func(w http.ResponseWriter) {
-				w.WriteHeader(http.StatusNotFound)
-			},
+			taskID: "notfound",
+			token:  "notfound",
 
 			wantRequests: []httprecorder.Request{
 				{
@@ -96,67 +100,66 @@ func TestClient_UnclaimTask(t *testing.T) {
 					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
 						"Content-Type": {"application/json; charset=utf-8"}},
 					Body: jsonMustMarshal(t, unclaim{
-						ID:    "93f549d5-aad2-4a7a-ba34-e85f750b50fd",
-						Token: "54ad5c4e-331b-4010-9309-f8fc5e042130",
+						ID:    "notfound",
+						Token: "notfound",
 					}),
 				},
 			},
-			wantErr: "the response from POST /api/v3/runner/unclaim was 404 (Not Found) (1 attempts)",
+			wantError: "404 (Not Found)",
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			recorder := httprecorder.New()
-
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if err := recorder.Record(r); err != nil {
-					panic(err)
-				}
-				w.Header().Add("Content-Type", "application/json")
-				tt.httpResponse(w)
-			}))
+			ctx := testcontext.Background()
+			runnerAPI := fakerunnerapi.New(ctx, []fakerunnerapi.Task{goodTask, exhaustedTask})
+			server := httptest.NewServer(runnerAPI)
 			defer server.Close()
 
 			c := NewClient(ClientConfig{
 				BaseURL:   server.URL,
-				AuthToken: "",
+				AuthToken: tt.token,
 				Info:      Info{},
 			})
-			ctx := testcontext.Background()
+
 			err := c.UnclaimTask(ctx, tt.taskID, tt.token)
 
-			if tt.wantErr == "" {
+			if tt.wantError == "" {
 				assert.NilError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.wantErr)
+				assert.ErrorContains(t, err, tt.wantError)
 			}
 
-			assert.Check(t, cmp.DeepEqual(recorder.AllRequests(), tt.wantRequests,
-				ignoreHeaders(t, "Content-Length", "Traceparent", "Tracestate", "User-Agent", "X-Honeycomb-Trace")))
+			assert.Check(t, cmp.DeepEqual(runnerAPI.AllRequests(), tt.wantRequests, ignoreHeaders(t,
+				"Authorization", "Content-Length", "Traceparent", "Tracestate", "User-Agent", "X-Honeycomb-Trace")))
 		})
 	}
 }
 
 func TestClient_FailTask(t *testing.T) {
+	var goodTask = fakerunnerapi.Task{
+		Token:      secret.String("testtoken"),
+		Allocation: "alloc",
+	}
+
 	tests := []struct {
 		name string
 
-		timestamp    time.Time
-		message      string
-		allocation   string
-		httpResponse func(w http.ResponseWriter)
+		token      secret.String
+		timestamp  time.Time
+		message    string
+		allocation string
 
 		wantRequests []httprecorder.Request
-		wantErr      string
+		wantError    string
 	}{
 		{
-			name:         "strip html special characters",
-			timestamp:    time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
-			allocation:   "alloc",
-			message:      `<'&error': "something wrong happened here!!!">`,
-			httpResponse: func(w http.ResponseWriter) { w.WriteHeader(http.StatusOK) },
+			name:       "strip html special characters",
+			token:      goodTask.Token,
+			timestamp:  time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			allocation: goodTask.Allocation,
+			message:    `<'&error': "something wrong happened here!!!">`,
 
 			wantRequests: []httprecorder.Request{
 				{
@@ -165,6 +168,7 @@ func TestClient_FailTask(t *testing.T) {
 					Header: http.Header{
 						"Accept":          {"application/json; charset=utf-8"},
 						"Accept-Encoding": {"gzip"},
+						"Authorization":   {"Bearer testtoken"},
 						"Content-Type":    {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, struct {
@@ -179,39 +183,40 @@ func TestClient_FailTask(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "not found",
+			token:     "badtoken",
+			wantError: "404 (Not Found)",
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			recorder := httprecorder.New()
-
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if err := recorder.Record(r); err != nil {
-					panic(err)
-				}
-				w.Header().Add("Content-Type", "application/json")
-				tt.httpResponse(w)
-			}))
+			ctx := testcontext.Background()
+			runnerAPI := fakerunnerapi.New(ctx, []fakerunnerapi.Task{goodTask})
+			server := httptest.NewServer(runnerAPI)
 			defer server.Close()
 
 			c := NewClient(ClientConfig{
 				BaseURL:   server.URL,
-				AuthToken: "",
+				AuthToken: tt.token,
 				Info:      Info{},
 			})
-			ctx := testcontext.Background()
+
 			err := c.FailTask(ctx, tt.timestamp, tt.allocation, tt.message)
 
-			if tt.wantErr == "" {
+			if tt.wantError == "" {
 				assert.NilError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.wantErr)
+				assert.ErrorContains(t, err, tt.wantError)
 			}
 
-			assert.Check(t, cmp.DeepEqual(recorder.AllRequests(), tt.wantRequests,
-				ignoreHeaders(t, "Content-Length", "Traceparent", "Tracestate", "User-Agent", "X-Honeycomb-Trace"),
-			))
+			if tt.wantRequests != nil {
+				assert.Check(t, cmp.DeepEqual(runnerAPI.AllRequests(), tt.wantRequests,
+					ignoreHeaders(t, "Content-Length", "Traceparent", "Tracestate", "User-Agent", "X-Honeycomb-Trace"),
+				))
+			}
 		})
 	}
 }
