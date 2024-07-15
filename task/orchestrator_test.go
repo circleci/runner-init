@@ -13,6 +13,8 @@ import (
 	"github.com/circleci/ex/testing/testcontext"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
+
+	"github.com/circleci/runner-init/clients/runner"
 )
 
 var testOnce sync.Once
@@ -111,7 +113,9 @@ func TestOrchestrator(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, tt.timeout)
 			defer cancel()
 
-			o := NewOrchestrator(tt.config, tt.gracePeriod)
+			r := &runner.Client{}
+
+			o := NewOrchestrator(tt.config, r, tt.gracePeriod)
 			err := o.Run(ctx)
 
 			if tt.wantError != "" {

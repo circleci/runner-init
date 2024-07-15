@@ -12,6 +12,7 @@ import (
 	"github.com/circleci/ex/o11y"
 	"github.com/circleci/ex/system"
 
+	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/cmd"
 	"github.com/circleci/runner-init/cmd/setup"
 	initialize "github.com/circleci/runner-init/init"
@@ -79,7 +80,7 @@ func run(version, date string) (err error) {
 		})
 
 	case "run-task":
-		orchestrator, err := runSetup(ctx, cli, sys)
+		orchestrator, err := runSetup(ctx, cli, version, sys)
 		if err != nil {
 			return err
 		}
@@ -93,16 +94,26 @@ func run(version, date string) (err error) {
 	return sys.Run(ctx, cli.ShutdownDelay)
 }
 
-func runSetup(ctx context.Context, cli cli, sys *system.System) (*task.Orchestrator, error) {
+func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (*task.Orchestrator, error) {
 	c := cli.RunTask
 
+	// Strip the orchestrator configuration from the environment
 	_ = os.Unsetenv("CIRCLECI_GOAT_CONFIG")
 
 	if err := cmd.UpdateDefaultTransport(ctx); err != nil {
 		return nil, fmt.Errorf("failed to load rootcerts: %w", err)
 	}
 
-	o := task.NewOrchestrator(c.Config, c.TerminationGracePeriod)
+	r := runner.NewClient(runner.ClientConfig{
+		BaseURL:   c.Config.RunnerAPIBaseURL,
+		AuthToken: c.Config.Token,
+		Info: runner.Info{
+			AgentVersion: version,
+		},
+	})
+
+	o := task.NewOrchestrator(c.Config, r, c.TerminationGracePeriod)
+
 	sys.AddHealthCheck(o)
 
 	if _, err := healthcheck.Load(ctx, c.HealthCheckAddr, sys); err != nil {
