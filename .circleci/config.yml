@@ -29,7 +29,7 @@ workflows:
           context: [ org-global ]
           requires: [ build ]
       - images:
-          context: [ org-global ]
+          context: [ org-global, runner-image-signing ]
           requires: [ lint, test, build, scan ]
 
 jobs:
@@ -102,8 +102,25 @@ jobs:
           command: |
             echo 'export SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi)' >> $BASH_ENV
       - run:
+          name: Install Cosign binary
+          command: |
+            curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
+            mv cosign-linux-amd64 ./bin/cosign
+            chmod +x ./bin/cosign
+      - run:
+          name: Create cosign.key
+          command: echo -e ${COSIGN_KEY} >cosign.key
+      - run:
           name: Build and maybe push images for cloud
           command: ./do images
+      - when:
+          # N.b., GoReleaser/Cosign will only sign during the publishing phase, which is only on main
+          condition:
+            equal: [ << pipeline.git.branch >>, main ]
+          steps:
+            - run:
+                name: Verify the manifest signature
+                command: ./bin/cosign verify --key cosign.pub circleci/runner-init:agent
       - run:
           name: Clone the server repo
           command: |

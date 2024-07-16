@@ -69,3 +69,8 @@ docker_manifests:
       - "circleci/runner-init:test-agents-amd64"
       - "circleci/runner-init:test-agents-arm64"
     skip_push: "{{.Env.SKIP_PUSH}}"
+
+docker_signs:
+  - cmd: ./bin/cosign
+    artifacts: manifests
+    stdin: "{{ .Env.COSIGN_PWD }}"
