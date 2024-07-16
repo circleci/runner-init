@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 reportDir="test-reports"
-GORELEASER_VERSION="v2.0.1"
+GORELEASER_VERSION="v2.1.0"
 GOTESTSUM_VERSION="1.12.0"
 
 # This variable is used, but shellcheck can't tell.

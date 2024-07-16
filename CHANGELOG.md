@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#33](https://github.com/circleci/runner-init/pull/33) [INTERNAL] Start signing the init images and manifests using [Cosign](https://docs.sigstore.dev/about/overview/).
 - [#32](https://github.com/circleci/runner-init/pull/32) [INTERNAL] Implement an HTTP client for the runner API to allow the orchestrator to retry or fail tasks directly in the future.
 - [#31](https://github.com/circleci/runner-init/pull/31) [INTERNAL] Wait on the task context finishing to stop the process reaper since the parent context can get cancelled first.
 - [#30](https://github.com/circleci/runner-init/pull/30) [INTERNAL] Add init-like behaviour (reaping child subprocesses to prevent them from becoming zombie processes) to the task orchestrator.
