@@ -3,6 +3,8 @@ package fakerunnerapi
 import (
 	"context"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/circleci/ex/config/secret"
 	"github.com/circleci/ex/httpserver/ginrouter"
@@ -10,12 +12,18 @@ import (
 	"github.com/circleci/ex/testing/httprecorder"
 	"github.com/circleci/ex/testing/httprecorder/ginrecorder"
 	"github.com/gin-gonic/gin"
+	gocmp "github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type RunnerAPI struct {
 	*httprecorder.RequestRecorder
 	http.Handler
-	tasks []Task
+	tasks    []Task
+	events   []TaskEvent
+	unclaims []TaskUnclaim
+
+	mu sync.RWMutex
 }
 
 type Task struct {
@@ -23,6 +31,24 @@ type Task struct {
 	Token        secret.String `json:"token"`
 	Allocation   string        `json:"allocation"`
 	UnclaimCount int           `json:"unclaim_count"`
+}
+
+type TaskEvent struct {
+	Allocation     string `json:"allocation"`
+	TimestampMilli int64  `json:"timestamp"`
+	Message        []byte `json:"message"`
+}
+
+var CmpTaskEvent = gocmp.Options{
+	cmpopts.EquateApproxTime(time.Second * 20),
+	cmpopts.AcyclicTransformer("TimestampMilli", func(msec int64) time.Time {
+		return time.UnixMilli(msec)
+	}),
+}
+
+type TaskUnclaim struct {
+	ID    string `json:"task_id" binding:"required"`
+	Token string `json:"task_token" binding:"required"`
 }
 
 func New(ctx context.Context, tasks []Task) *RunnerAPI {
@@ -44,20 +70,34 @@ func New(ctx context.Context, tasks []Task) *RunnerAPI {
 	return ra
 }
 
+func (r *RunnerAPI) TaskEvents() []TaskEvent {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.events
+}
+
+func (r *RunnerAPI) TaskUnclaims() []TaskUnclaim {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.unclaims
+}
+
 func (r *RunnerAPI) failTaskHandler(c *gin.Context) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	task := r.findTask(c.Request)
 
-	body := struct {
-		Allocation string `json:"allocation"`
-		Timestamp  int64  `json:"timestamp"` // milliseconds
-		Message    []byte `json:"message"`
-	}{}
-	err := c.BindJSON(&body)
+	var event TaskEvent
+	err := c.BindJSON(&event)
+	r.events = append(r.events, event)
 
 	switch {
 	case err != nil:
 		c.AbortWithStatus(http.StatusBadRequest)
-	case body.Allocation != task.Allocation:
+	case event.Allocation != task.Allocation:
 		c.AbortWithStatus(http.StatusNotFound)
 	default:
 		c.AbortWithStatus(http.StatusOK)
@@ -65,18 +105,19 @@ func (r *RunnerAPI) failTaskHandler(c *gin.Context) {
 }
 
 func (r *RunnerAPI) unclaimHandler(c *gin.Context) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	task := r.findTask(c.Request)
 
-	body := struct {
-		ID    string `json:"task_id" binding:"required"`
-		Token string `json:"task_token" binding:"required"`
-	}{}
-	err := c.BindJSON(&body)
+	var unclaim TaskUnclaim
+	err := c.BindJSON(&unclaim)
+	r.unclaims = append(r.unclaims, unclaim)
 
 	switch {
 	case err != nil:
 		c.AbortWithStatus(http.StatusBadRequest)
-	case task.ID != body.ID:
+	case task.ID != unclaim.ID:
 		c.AbortWithStatus(http.StatusBadRequest)
 	case task.UnclaimCount >= 3:
 		c.AbortWithStatus(http.StatusConflict)

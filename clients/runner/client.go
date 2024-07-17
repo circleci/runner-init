@@ -79,17 +79,17 @@ func (c *Client) UnclaimTask(ctx context.Context, id string, token secret.String
 var regexMatchHTMLSpecialChars = regexp.MustCompile(`[<>&'"]`)
 
 type taskEvent struct {
-	Allocation string `json:"allocation"`
-	Timestamp  int64  `json:"timestamp"` // milliseconds
-	Message    []byte `json:"message"`
+	Allocation     string `json:"allocation"`
+	TimestampMilli int64  `json:"timestamp"`
+	Message        []byte `json:"message"`
 }
 
 func (c *Client) FailTask(ctx context.Context, timestamp time.Time, allocation, message string) error {
 	r := httpclient.NewRequest("POST", "/api/v2/task/event/fail",
 		httpclient.Body(&taskEvent{
-			Allocation: allocation,
-			Timestamp:  timestamp.UnixMilli(),
-			Message:    []byte(regexMatchHTMLSpecialChars.ReplaceAllString(message, "")),
+			Allocation:     allocation,
+			TimestampMilli: timestamp.UnixMilli(),
+			Message:        []byte(regexMatchHTMLSpecialChars.ReplaceAllString(message, "")),
 		}))
 
 	return c.call(ctx, r)
