@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/circleci/ex/testing/testcontext"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 
@@ -26,7 +25,7 @@ func TestOrchestrator(t *testing.T) {
 	if os.Getenv("BE_TASK_AGENT") == "true" {
 		// If BE_TASK_AGENT is set, then this test will run itself as a fake task agent.
 		// This provides a way to run checks against the task agent command.
-		beTaskAgent(t)
+		beFakeTaskAgent(t)
 		return
 	}
 
@@ -40,6 +39,7 @@ func TestOrchestrator(t *testing.T) {
 	defaultConfig := Config{
 		Token:         "testtoken",
 		TaskAgentPath: testPath + " -test.run=TestOrchestrator",
+		Allocation:    "testalloc",
 	}
 	tests := []struct {
 		name string
@@ -95,7 +95,8 @@ func TestOrchestrator(t *testing.T) {
 				"which could interrupt the task. Possible reasons include the Pod being evicted or deleted",
 			wantTaskEvents: []fakerunnerapi.TaskEvent{
 				{
-					Allocation: defaultConfig.Allocation,
+					Allocation:     defaultConfig.Allocation,
+					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error on shutdown: task agent process is still running, " +
 						"which could interrupt the task. Possible reasons include the Pod being evicted or deleted"),
 				},
@@ -111,7 +112,8 @@ func TestOrchestrator(t *testing.T) {
 				"task agent command exited with an unexpected error: exit status 123",
 			wantTaskEvents: []fakerunnerapi.TaskEvent{
 				{
-					Allocation: defaultConfig.Allocation,
+					Allocation:     defaultConfig.Allocation,
+					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
 						"task agent command exited with an unexpected error: exit status 123"),
 				},
@@ -120,16 +122,34 @@ func TestOrchestrator(t *testing.T) {
 		{
 			name: "retryable error: task agent failed to start",
 			config: Config{
-				TaskID:        "testid",
-				Token:         defaultConfig.Token,
-				Allocation:    "testalloc",
+				TaskID:        "retry",
+				Token:         "retry-token",
 				TaskAgentPath: "thiswontstart",
 			},
 			wantError: "",
 			wantTaskUnclaims: []fakerunnerapi.TaskUnclaim{
 				{
-					ID:    "testid",
-					Token: defaultConfig.Token.Raw(),
+					ID:    "retry",
+					Token: "retry-token",
+				},
+			},
+		},
+		{
+			name: "retryable error: an unsafe retry",
+			config: Config{
+				TaskID:              "retry",
+				EnableUnsafeRetries: true,
+				Token:               "retry-token",
+				TaskAgentPath:       defaultConfig.TaskAgentPath,
+			},
+			env: map[string]string{
+				"SIMULATE_TASK_AGENT_MISBEHAVING": "true",
+			},
+			wantError: "",
+			wantTaskUnclaims: []fakerunnerapi.TaskUnclaim{
+				{
+					ID:    "retry",
+					Token: "retry-token",
 				},
 			},
 		},
@@ -156,6 +176,7 @@ func TestOrchestrator(t *testing.T) {
 			},
 			wantTaskEvents: []fakerunnerapi.TaskEvent{
 				{
+					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
 						"failed to start task agent command: " +
 						"exec: thiswontstart: executable file not found in $PATH"),
@@ -205,8 +226,7 @@ func TestOrchestrator(t *testing.T) {
 			}
 
 			assert.Check(t, cmp.DeepEqual(runnerAPI.TaskUnclaims(), tt.wantTaskUnclaims))
-			assert.Check(t, cmp.DeepEqual(runnerAPI.TaskEvents(), tt.wantTaskEvents,
-				cmpopts.IgnoreFields(fakerunnerapi.TaskEvent{}, "Timestamp")))
+			assert.Check(t, cmp.DeepEqual(runnerAPI.TaskEvents(), tt.wantTaskEvents, fakerunnerapi.CmpTaskEvent))
 
 			for _, check := range tt.extraChecks {
 				check(t)
@@ -215,7 +235,7 @@ func TestOrchestrator(t *testing.T) {
 	}
 }
 
-func beTaskAgent(t *testing.T) {
+func beFakeTaskAgent(t *testing.T) {
 	t.Helper()
 
 	assert.Check(t, cmp.Equal(os.Args[2], "_internal"))

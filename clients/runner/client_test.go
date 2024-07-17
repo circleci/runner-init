@@ -172,13 +172,13 @@ func TestClient_FailTask(t *testing.T) {
 						"Content-Type":    {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, struct {
-						Allocation string `json:"allocation"`
-						Timestamp  int64  `json:"timestamp"` // milliseconds
-						Message    []byte `json:"message"`
+						Allocation     string `json:"allocation"`
+						TimestampMilli int64  `json:"timestamp"`
+						Message        []byte `json:"message"`
 					}{
-						Allocation: "alloc",
-						Timestamp:  1257894000000,
-						Message:    []byte("error: something wrong happened here!!!"),
+						Allocation:     "alloc",
+						TimestampMilli: 1257894000000,
+						Message:        []byte("error: something wrong happened here!!!"),
 					}),
 				},
 			},

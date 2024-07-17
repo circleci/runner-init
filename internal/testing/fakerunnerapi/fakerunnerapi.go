@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/circleci/ex/config/secret"
 	"github.com/circleci/ex/httpserver/ginrouter"
@@ -11,6 +12,8 @@ import (
 	"github.com/circleci/ex/testing/httprecorder"
 	"github.com/circleci/ex/testing/httprecorder/ginrecorder"
 	"github.com/gin-gonic/gin"
+	gocmp "github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type RunnerAPI struct {
@@ -31,9 +34,16 @@ type Task struct {
 }
 
 type TaskEvent struct {
-	Allocation string `json:"allocation"`
-	Timestamp  int64  `json:"timestamp"` // milliseconds
-	Message    []byte `json:"message"`
+	Allocation     string `json:"allocation"`
+	TimestampMilli int64  `json:"timestamp"`
+	Message        []byte `json:"message"`
+}
+
+var CmpTaskEvent = gocmp.Options{
+	cmpopts.EquateApproxTime(time.Second * 20),
+	cmpopts.AcyclicTransformer("TimestampMilli", func(msec int64) time.Time {
+		return time.UnixMilli(msec)
+	}),
 }
 
 type TaskUnclaim struct {
