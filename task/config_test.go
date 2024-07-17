@@ -15,6 +15,7 @@ func Test_UnmarshalJSON(t *testing.T) {
 	goodConfig := `
 {
 	"cmd": [],
+	"task_id": "testid",
 	"enable_unsafe_retries": false,
 	"token": "testtoken",
 	"task_agent_path": "/path/to/agent",
@@ -36,6 +37,7 @@ func Test_UnmarshalJSON(t *testing.T) {
 			rawConfig: goodConfig,
 			wantConfig: Config{
 				Cmd:              []string{},
+				TaskID:           "testid",
 				Token:            secret.String("testtoken"),
 				TaskAgentPath:    "/path/to/agent",
 				RunnerAPIBaseURL: "https://example.com/api",

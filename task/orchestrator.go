@@ -22,7 +22,7 @@ import (
 
 type Orchestrator struct {
 	config       Config
-	runnerClient *runner.Client // TODO: actually use this to retry or fail tasks (as needed)
+	runnerClient *runner.Client
 	gracePeriod  time.Duration
 
 	ready      atomic.Bool
@@ -53,7 +53,11 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 	go o.reapChildProcesses(ctx)
 
 	defer func() {
-		err = errors.Join(err, o.cleanup(ctx))
+		cleanupErr := o.cleanup(ctx)
+		if cleanupErr != nil {
+			cleanupErr = fmt.Errorf("error on shutdown: %w", cleanupErr)
+		}
+		err = o.handleRunErrors(ctx, errors.Join(cleanupErr, err))
 	}()
 
 	if len(o.config.Cmd) > 0 {
@@ -204,7 +208,8 @@ func (o *Orchestrator) cleanup(_ context.Context) error {
 	if pid > 0 {
 		if p, err := os.FindProcess(int(pid)); err == nil {
 			if err := p.Signal(os.Signal(syscall.Signal(0))); err == nil {
-				return errors.New("task agent process is still running and may interrupt the task")
+				return fmt.Errorf("task agent process is still running, which could interrupt the task. " +
+					"Possible reasons include the Pod being evicted or deleted")
 
 			} else if !errors.Is(err, os.ErrProcessDone) {
 				return fmt.Errorf("unexpected error while signaling task agent process: %w", err)
@@ -213,6 +218,35 @@ func (o *Orchestrator) cleanup(_ context.Context) error {
 	}
 
 	return nil
+}
+
+func (o *Orchestrator) handleRunErrors(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	ctx = o11y.WithProvider(context.Background(), o11y.FromContext(ctx))
+	c := o.config
+
+	var unclaimErr error
+	if errors.As(err, &retryableError{}) || c.EnableUnsafeRetries {
+		unclaimErr = o.runnerClient.UnclaimTask(ctx, c.TaskID, c.Token)
+		if unclaimErr == nil {
+			o11y.LogError(ctx, "retrying task after encountering a retryable error", err)
+			return nil
+		}
+	}
+
+	if unclaimErr != nil {
+		unclaimErr = fmt.Errorf("failed to retry task: %w", unclaimErr)
+	}
+
+	failErr := o.runnerClient.FailTask(ctx, time.Now(), c.Allocation, err.Error())
+	if failErr != nil {
+		failErr = fmt.Errorf("failed to send fail event for task: %w", failErr)
+	}
+
+	return errors.Join(failErr, unclaimErr, err)
 }
 
 var reapTime = 10 * time.Second // can be overridden by tests

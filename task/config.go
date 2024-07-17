@@ -14,6 +14,7 @@ import (
 type Config struct {
 	Cmd                 []string `json:"cmd"`
 	User                string   `json:"user"`
+	TaskID              string   `json:"task_id"`
 	EnableUnsafeRetries bool     `json:"enable_unsafe_retries"`
 
 	// Task agent configuration
