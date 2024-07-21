@@ -6,8 +6,11 @@ import (
 	"io"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -30,9 +33,14 @@ func TestOrchestrator(t *testing.T) {
 	}
 
 	testOnce.Do(func() {
-		// Set the process reap time to 0 to prevent interference between test cases
-		reapTime = 0
+		// Reduce the process reap time to prevent interference between test cases
+		reapTime = 500 * time.Millisecond
 	})
+
+	// Re-parent any child processes to us to simulate the orchestrator being init
+	const PrSetChildSubreaper = 36
+	_, _, err := syscall.Syscall(syscall.SYS_PRCTL, PrSetChildSubreaper, uintptr(1), 0)
+	assert.Check(t, err == 0)
 
 	testPath := os.Args[0]
 	scratchDir := t.TempDir()
@@ -64,7 +72,7 @@ func TestOrchestrator(t *testing.T) {
 			config: defaultConfig,
 		},
 		{
-			name: "custom command",
+			name: "custom entrypoint",
 			config: Config{
 				Cmd:           []string{"/bin/sh", "-c", fmt.Sprintf("touch %s/testfile", scratchDir)},
 				Token:         "testtoken",
@@ -73,7 +81,7 @@ func TestOrchestrator(t *testing.T) {
 			extraChecks: []func(t *testing.T){
 				func(t *testing.T) {
 					_, err := os.Stat(scratchDir + "/testfile")
-					assert.NilError(t, err, "expected custom command to create file")
+					assert.NilError(t, err, "expected custom entrypoint to create file")
 				},
 			},
 		},
@@ -83,6 +91,30 @@ func TestOrchestrator(t *testing.T) {
 			timeout:     500 * time.Millisecond,
 			gracePeriod: 2 * time.Second,
 			wantError:   "",
+		},
+		{
+			name:   "zombie processes are reaped",
+			config: defaultConfig,
+			env: map[string]string{
+				"SIMULATE_A_ZOMBIE_PROCESS": scratchDir + "/task.pid",
+			},
+			extraChecks: []func(t *testing.T){
+				func(t *testing.T) {
+					b, err := os.ReadFile(scratchDir + "/task.pid") //nolint:gosec // this is a test
+					assert.NilError(t, err)
+
+					pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
+					assert.NilError(t, err)
+
+					time.Sleep(500 * time.Millisecond)
+
+					p, err := os.FindProcess(pid)
+					assert.NilError(t, err)
+
+					err = p.Signal(syscall.Signal(0))
+					assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
+				},
+			},
 		},
 		{
 			name:   "error: interrupted task",
@@ -103,19 +135,19 @@ func TestOrchestrator(t *testing.T) {
 			},
 		},
 		{
-			name:   "error: task agent misbehaving",
+			name:   "error: task agent panicking",
 			config: defaultConfig,
 			env: map[string]string{
-				"SIMULATE_TASK_AGENT_MISBEHAVING": "true",
+				"SIMULATE_TASK_AGENT_PANICKING": "true",
 			},
 			wantError: "error while executing task agent: " +
-				"task agent command exited with an unexpected error: exit status 123",
+				"task agent command exited with an unexpected error: exit status 2",
 			wantTaskEvents: []fakerunnerapi.TaskEvent{
 				{
 					Allocation:     defaultConfig.Allocation,
 					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
-						"task agent command exited with an unexpected error: exit status 123"),
+						"task agent command exited with an unexpected error: exit status 2"),
 				},
 			},
 		},
@@ -143,7 +175,7 @@ func TestOrchestrator(t *testing.T) {
 				TaskAgentPath:       defaultConfig.TaskAgentPath,
 			},
 			env: map[string]string{
-				"SIMULATE_TASK_AGENT_MISBEHAVING": "true",
+				"SIMULATE_TASK_AGENT_PANICKING": "true",
 			},
 			wantError: "",
 			wantTaskUnclaims: []fakerunnerapi.TaskUnclaim{
@@ -232,6 +264,8 @@ func TestOrchestrator(t *testing.T) {
 				check(t)
 			}
 		})
+
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -254,7 +288,12 @@ func beFakeTaskAgent(t *testing.T) {
 		time.Sleep(30 * time.Second)
 	}
 
-	if os.Getenv("SIMULATE_TASK_AGENT_MISBEHAVING") == "true" {
-		os.Exit(123)
+	if os.Getenv("SIMULATE_TASK_AGENT_PANICKING") == "true" {
+		panic("I'm intentionally panicking!!!")
+	}
+
+	if pidfile := os.Getenv("SIMULATE_A_ZOMBIE_PROCESS"); pidfile != "" {
+		cmd := exec.Command("/bin/sh", "-c", "echo $$ >"+pidfile+" && sleep 300") //nolint:gosec // this is a test
+		assert.NilError(t, cmd.Start())
 	}
 }

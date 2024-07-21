@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#37](https://github.com/circleci/runner-init/pull/37) [INTERNAL] Refactored command execution structure within the orchestrator and ensured cleanup of the child process group spawned by the task agent.
 - [#36](https://github.com/circleci/runner-init/pull/36) [INTERNAL] Integrate the runner API client in the task orchestrator. This enables retrying or reporting infrastructure failures as appropriate.
 - [#33](https://github.com/circleci/runner-init/pull/33) [INTERNAL] Start signing the init images and manifests using [Cosign](https://docs.sigstore.dev/about/overview/).
 - [#32](https://github.com/circleci/runner-init/pull/32) [INTERNAL] Implement an HTTP client for the runner API to allow the orchestrator to retry or fail tasks directly in the future.
