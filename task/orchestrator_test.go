@@ -33,8 +33,8 @@ func TestOrchestrator(t *testing.T) {
 	}
 
 	testOnce.Do(func() {
-		// Reduce the process reap time to prevent interference between test cases
-		reapTime = 500 * time.Millisecond
+		// Reduce the process reap timeout to speed up the tests
+		reapTimeout = 500 * time.Millisecond
 	})
 
 	// Re-parent any child processes to us to simulate the orchestrator being init
@@ -264,8 +264,6 @@ func TestOrchestrator(t *testing.T) {
 				check(t)
 			}
 		})
-
-		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -293,7 +291,7 @@ func beFakeTaskAgent(t *testing.T) {
 	}
 
 	if pidfile := os.Getenv("SIMULATE_A_ZOMBIE_PROCESS"); pidfile != "" {
-		cmd := exec.Command("/bin/sh", "-c", "echo $$ >"+pidfile+" && sleep 300") //nolint:gosec // this is a test
-		assert.NilError(t, cmd.Start())
+		c := exec.Command("/bin/sh", "-c", "echo $$ >"+pidfile+" && sleep 300") //nolint:gosec // this is a test
+		assert.NilError(t, c.Start())
 	}
 }

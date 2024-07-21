@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/circleci/ex/o11y"
-	"github.com/hashicorp/go-reap"
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/task/cmd"
@@ -23,9 +21,11 @@ type Orchestrator struct {
 	ready      atomic.Bool
 	entrypoint cmd.Command
 	taskAgent  cmd.Command
+	reaper     cmd.Reaper
 	cancelTask context.CancelFunc
-	reapMu     sync.RWMutex
 }
+
+var reapTimeout = 2 * time.Second // can be overridden in tests
 
 func NewOrchestrator(config Config, runnerClient *runner.Client, gracePeriod time.Duration) *Orchestrator {
 	if runnerClient == nil {
@@ -36,15 +36,13 @@ func NewOrchestrator(config Config, runnerClient *runner.Client, gracePeriod tim
 		config:       config,
 		runnerClient: runnerClient,
 		gracePeriod:  gracePeriod,
+		reaper:       cmd.NewReaper(reapTimeout),
 	}
 }
 
 func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 	ctx := o.taskContext(parentCtx)
-
-	// Take the reap lock so the process reaper doesn't steal the return value from Go exec
-	o.reapMu.RLock()
-	go o.reapChildProcesses(ctx)
+	o.reaper.Enable(ctx)
 
 	defer func() {
 		err = o.shutdown(ctx, err)
@@ -62,8 +60,8 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		// We no longer require the reap lock once the task agent process has completed
-		defer o.reapMu.RUnlock()
+		// Start process reaping once the task agent process has completed
+		defer o.reaper.Start()
 
 		if err := o.executeAgent(ctx); err != nil {
 			errCh <- fmt.Errorf("error while executing task agent: %w", err)
@@ -123,23 +121,24 @@ func (o *Orchestrator) executeAgent(ctx context.Context) error {
 }
 
 func (o *Orchestrator) shutdown(ctx context.Context, runErr error) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("error on shutdown: %w", err)
-		}
-		err = errors.Join(err, runErr)
-		if err != nil {
-			err = o.handleErrors(ctx, err)
-		}
-
-		o.cancelTask()
-	}()
-
 	isRunning, err := o.taskAgent.IsRunning()
 	if isRunning {
-		return fmt.Errorf("task agent process is still running, which could interrupt the task. " +
+		err = fmt.Errorf("task agent process is still running, which could interrupt the task. " +
 			"Possible reasons include the Pod being evicted or deleted")
 	}
+	if err != nil {
+		err = fmt.Errorf("error on shutdown: %w", err)
+	}
+
+	err = errors.Join(err, runErr)
+	if err != nil {
+		err = o.handleErrors(ctx, err)
+	}
+
+	o.cancelTask()
+
+	<-o.reaper.Done()
+
 	return err
 }
 
@@ -166,26 +165,6 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 	}
 
 	return errors.Join(failErr, unclaimErr, err)
-}
-
-var reapTime = 30 * time.Second // can be overridden by tests
-
-// Reap any child processes that may be spawned by the task
-func (o *Orchestrator) reapChildProcesses(ctx context.Context) {
-	if !reap.IsSupported() {
-		o11y.Log(ctx, "child process reaping is unsupported - this may result in zombie processes")
-		return
-	}
-
-	done := make(chan struct{})
-	defer close(done)
-
-	go reap.ReapChildren(nil, nil, done, &o.reapMu)
-
-	<-ctx.Done() // block until the task is completed
-
-	// Give a moment to reap (note that since this is in a goroutine, this won't block the main thread from exiting)
-	time.Sleep(reapTime)
 }
 
 func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Context) error) {
