@@ -73,6 +73,8 @@ func run(version, date string) (err error) {
 
 	switch kongCtx.Command() {
 	case "init":
+		fallthrough
+	case "init <source> <destination>":
 		c := cli.Init
 		sys.AddService(func(_ context.Context) error {
 			defer cancel()
