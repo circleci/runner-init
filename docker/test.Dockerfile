@@ -3,7 +3,7 @@ FROM scratch as builder
 ARG ARCH
 
 COPY ./target/bin/${ARCH}/orchestrator /
-COPY ./target/bin/${ARCH}/fake-task-agent /
+COPY ./target/bin/${ARCH}/fake-task-agent /circleci-agent
 
 FROM scratch
 
