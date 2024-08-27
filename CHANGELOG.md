@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#43](https://github.com/circleci/runner-init/pull/43) [INTERNAL] Don't exit with an error if the orchestrator has been interrupted.
 - [#42](https://github.com/circleci/runner-init/pull/42) [INTERNAL] Correctly configure user's home directory when switching users to execute task-agent.
 - [#39](https://github.com/circleci/runner-init/pull/39) [INTERNAL] Fix `init` command matching on startup 
 - [#37](https://github.com/circleci/runner-init/pull/37) [INTERNAL] Refactored command execution structure within the orchestrator and ensured cleanup of the child process group spawned by the task agent.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log" //nolint:depguard // a non-O11y log is allowed for a top-level fatal exit
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/circleci/ex/httpserver/healthcheck"
 	"github.com/circleci/ex/o11y"
 	"github.com/circleci/ex/system"
+	"github.com/circleci/ex/termination"
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/cmd"
@@ -42,7 +44,8 @@ type runTaskCmd struct {
 }
 
 func main() {
-	if err := run(cmd.Version, cmd.Date); err != nil {
+	err := run(cmd.Version, cmd.Date)
+	if err != nil && !errors.Is(err, termination.ErrTerminated) {
 		log.Fatal(err)
 	}
 }
