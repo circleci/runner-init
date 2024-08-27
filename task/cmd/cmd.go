@@ -121,7 +121,10 @@ func newCmd(ctx context.Context, argv []string, user string, env ...string) *exe
 
 func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
 	usr, err := user.Lookup(username)
+
 	if err == nil {
+		cmd.Env = append(cmd.Env, "HOME="+usr.HomeDir)
+
 		uid, _ := strconv.Atoi(usr.Uid)
 		gid, _ := strconv.Atoi(usr.Gid)
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
