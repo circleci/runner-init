@@ -5,6 +5,6 @@ Flags:
       --termination-grace-period=20s
                 How long the agent will wait for the task to complete if
                 interrupted ($CIRCLECI_GOAT_TERMINATION_GRACE_PERIOD).
-      --health-check-addr="localhost:7623"
+      --health-check-addr=":7623"
                 Address for the health check API to listen on
                 ($CIRCLECI_GOAT_HEALTH_CHECK_ADDR).
