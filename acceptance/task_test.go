@@ -24,6 +24,7 @@ func TestRunTask(t *testing.T) {
 	r := runner.New(
 		"CIRCLECI_GOAT_SHUTDOWN_DELAY=10s",
 		"CIRCLECI_GOAT_CONFIG="+goodConfig,
+		"CIRCLECI_GOAT_HEALTH_CHECK_ADDR=:7624",
 	)
 	res, err := r.Start(orchestratorTestBinaryRunTask)
 	assert.NilError(t, err)
