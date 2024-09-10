@@ -2,7 +2,7 @@ Usage: test-app [flags]
 
 Flags:
   -h, --help    Show context-sensitive help.
-      --termination-grace-period=20s
+      --termination-grace-period=10s
                 How long the agent will wait for the task to complete if
                 interrupted ($CIRCLECI_GOAT_TERMINATION_GRACE_PERIOD).
       --health-check-addr=":7623"

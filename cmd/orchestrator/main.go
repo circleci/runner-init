@@ -36,7 +36,7 @@ type initCmd struct {
 }
 
 type runTaskCmd struct {
-	TerminationGracePeriod time.Duration `default:"20s" help:"How long the agent will wait for the task to complete if interrupted."`
+	TerminationGracePeriod time.Duration `default:"10s" help:"How long the agent will wait for the task to complete if interrupted."`
 	HealthCheckAddr        string        `default:":7623" help:"Address for the health check API to listen on."`
 
 	// Task environment configuration should be injected through a Kubernetes Secret
