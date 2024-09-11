@@ -136,19 +136,19 @@ func TestOrchestrator(t *testing.T) {
 			},
 		},
 		{
-			name:   "error: task agent panicking",
+			name:   "error: task agent encountered fatal error",
 			config: defaultConfig,
 			env: map[string]string{
-				"SIMULATE_TASK_AGENT_PANICKING": "true",
+				"SIMULATE_FATAL_ERROR": "true",
 			},
 			wantError: "error while executing task agent: " +
-				"task agent command exited with an unexpected error: exit status 2",
+				"task agent command exited with an unexpected error: exit status 1",
 			wantTaskEvents: []fakerunnerapi.TaskEvent{
 				{
 					Allocation:     defaultConfig.Allocation,
 					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
-						"task agent command exited with an unexpected error: exit status 2: " +
+						"task agent command exited with an unexpected error: exit status 1: fatal!!!: " +
 						"Check container logs for more details"),
 				},
 			},
@@ -177,7 +177,7 @@ func TestOrchestrator(t *testing.T) {
 				TaskAgentPath:       defaultConfig.TaskAgentPath,
 			},
 			env: map[string]string{
-				"SIMULATE_TASK_AGENT_PANICKING": "true",
+				"SIMULATE_FATAL_ERROR": "true",
 			},
 			wantError: "",
 			wantTaskUnclaims: []fakerunnerapi.TaskUnclaim{
@@ -289,8 +289,9 @@ func beFakeTaskAgent(t *testing.T) {
 		time.Sleep(30 * time.Second)
 	}
 
-	if os.Getenv("SIMULATE_TASK_AGENT_PANICKING") == "true" {
-		panic("I'm intentionally panicking!!!")
+	if os.Getenv("SIMULATE_FATAL_ERROR") == "true" {
+		_, _ = os.Stderr.WriteString("fatal!!!")
+		os.Exit(1)
 	}
 
 	if pidfile := os.Getenv("SIMULATE_A_ZOMBIE_PROCESS"); pidfile != "" {

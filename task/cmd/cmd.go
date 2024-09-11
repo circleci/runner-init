@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/user"
@@ -16,13 +17,16 @@ import (
 )
 
 type Command struct {
-	cmd       *exec.Cmd
-	isStarted atomic.Bool
+	cmd         *exec.Cmd
+	stderrSaver *prefixSuffixSaver
+	isStarted   atomic.Bool
 }
 
 func New(ctx context.Context, cmd []string, user string, env ...string) Command {
+	s := &prefixSuffixSaver{N: 160}
 	return Command{
-		cmd: newCmd(ctx, cmd, user, env...),
+		cmd:         newCmd(ctx, cmd, user, s, env...),
+		stderrSaver: s,
 	}
 }
 
@@ -67,12 +71,11 @@ func (c *Command) Wait() error {
 	}()
 
 	err := cmd.Wait()
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		if len(exitErr.Stderr) > 0 {
-			return fmt.Errorf("%w: %s", err, string(exitErr.Stderr))
+	if err != nil {
+		stderr := c.stderrSaver.Bytes()
+		if len(stderr) > 0 {
+			return fmt.Errorf("%w: %s", err, string(stderr))
 		}
-		return exitErr
 	}
 	return err
 }
@@ -92,7 +95,7 @@ func (c *Command) IsRunning() (bool, error) {
 	return false, nil
 }
 
-func newCmd(ctx context.Context, argv []string, user string, env ...string) *exec.Cmd {
+func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
 	//#nosec:G204 // this is intentionally setting up a command
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 
@@ -108,7 +111,7 @@ func newCmd(ctx context.Context, argv []string, user string, env ...string) *exe
 	}
 
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = io.MultiWriter(os.Stderr, stderrSaver)
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid:   true,
