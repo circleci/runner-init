@@ -1,10 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>circleci/renovate-config:backplane.json5"
+    "config:recommended"
   ],
   "postUpdateOptions": [
     "gomodTidy",
     "gomodUpdateImportPaths"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "github.com/circleci/ex"
+      ],
+      "ignoreUnstable": false
+    }
   ]
 }
