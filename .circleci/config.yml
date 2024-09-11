@@ -113,15 +113,9 @@ jobs:
       - run:
           name: Build and maybe push images for cloud
           command: ./do images
-     # Build dev images on non-main branches
-      - when:
-          condition:
-            not: 
-              equal: [ << pipeline.git.branch >>, main ]
-          steps:          
-          - run:
-              name: Build and maybe push dev images for cloud
-              command: ./do dev_images          
+      - run:
+          name: Build and maybe push dev images for cloud
+          command: ./do dev_images          
       - when:
           # N.b., GoReleaser/Cosign will only sign during the publishing phase, which is only on main
           condition:
