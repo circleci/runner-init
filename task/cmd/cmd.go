@@ -66,7 +66,15 @@ func (c *Command) Wait() error {
 		_ = cmd.Cancel()
 	}()
 
-	return cmd.Wait()
+	err := cmd.Wait()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		if len(exitErr.Stderr) > 0 {
+			return fmt.Errorf("%w: %s", err, string(exitErr.Stderr))
+		}
+		return exitErr
+	}
+	return err
 }
 
 func (c *Command) IsRunning() (bool, error) {

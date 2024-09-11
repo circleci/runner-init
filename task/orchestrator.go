@@ -146,6 +146,10 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 	ctx = o11y.WithProvider(context.Background(), o11y.FromContext(ctx))
 	c := o.config
 
+	if err != nil {
+		err = fmt.Errorf("%w: Check container logs for more details", err)
+	}
+
 	var unclaimErr error
 	if errors.As(err, &retryableError{}) || c.EnableUnsafeRetries {
 		unclaimErr = o.runnerClient.UnclaimTask(ctx, c.TaskID, c.Token)

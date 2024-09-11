@@ -130,7 +130,8 @@ func TestOrchestrator(t *testing.T) {
 					Allocation:     defaultConfig.Allocation,
 					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error on shutdown: task agent process is still running, " +
-						"which could interrupt the task. Possible reasons include the Pod being evicted or deleted"),
+						"which could interrupt the task. Possible reasons include the Pod being evicted or deleted: " +
+						"Check container logs for more details"),
 				},
 			},
 		},
@@ -147,7 +148,8 @@ func TestOrchestrator(t *testing.T) {
 					Allocation:     defaultConfig.Allocation,
 					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
-						"task agent command exited with an unexpected error: exit status 2"),
+						"task agent command exited with an unexpected error: exit status 2: " +
+						"Check container logs for more details"),
 				},
 			},
 		},
@@ -211,7 +213,8 @@ func TestOrchestrator(t *testing.T) {
 					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
 						"failed to start task agent command: " +
-						"exec: thiswontstart: executable file not found in $PATH"),
+						"exec: thiswontstart: executable file not found in $PATH: " +
+						"Check container logs for more details"),
 				},
 			},
 		},
