@@ -18,16 +18,18 @@ import (
 )
 
 type Command struct {
-	cmd         *exec.Cmd
-	stderrSaver *prefixSuffixSaver
-	isStarted   atomic.Bool
+	cmd            *exec.Cmd
+	stderrSaver    *prefixSuffixSaver
+	isStarted      atomic.Bool
+	forwardSignals bool
 }
 
 func New(ctx context.Context, cmd []string, forwardSignals bool, user string, env ...string) Command {
 	s := &prefixSuffixSaver{N: 160}
 	return Command{
-		cmd:         newCmd(ctx, cmd, forwardSignals, user, s, env...),
-		stderrSaver: s,
+		cmd:            newCmd(ctx, cmd, user, s, env...),
+		stderrSaver:    s,
+		forwardSignals: forwardSignals,
 	}
 }
 
@@ -40,6 +42,10 @@ func (c *Command) Start() error {
 
 	if cmd.Process == nil {
 		return fmt.Errorf("no underlying process")
+	}
+
+	if c.forwardSignals {
+		notifySignals(cmd)
 	}
 
 	c.isStarted.Store(true)
@@ -96,8 +102,7 @@ func (c *Command) IsRunning() (bool, error) {
 	return false, nil
 }
 
-func newCmd(ctx context.Context,
-	argv []string, forwardSignals bool, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
+func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
 	//#nosec:G204 // this is intentionally setting up a command
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 
@@ -129,10 +134,6 @@ func newCmd(ctx context.Context,
 		maybeSwitchUser(ctx, cmd, user)
 	}
 
-	if forwardSignals {
-		notifySignals(ctx, cmd)
-	}
-
 	return cmd
 }
 
@@ -150,15 +151,13 @@ func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
 	}
 }
 
-func notifySignals(ctx context.Context, cmd *exec.Cmd) {
+func notifySignals(cmd *exec.Cmd) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		for sig := range ch {
-			if err := cmd.Process.Signal(sig); err != nil {
-				o11y.LogError(ctx, "error forwarding signal", err, o11y.Field("signal", sig))
-			}
+			_ = cmd.Process.Signal(sig)
 		}
 	}()
 }
