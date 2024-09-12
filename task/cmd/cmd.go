@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"strconv"
 	"strings"
@@ -22,10 +23,10 @@ type Command struct {
 	isStarted   atomic.Bool
 }
 
-func New(ctx context.Context, cmd []string, user string, env ...string) Command {
+func New(ctx context.Context, cmd []string, forwardSignals bool, user string, env ...string) Command {
 	s := &prefixSuffixSaver{N: 160}
 	return Command{
-		cmd:         newCmd(ctx, cmd, user, s, env...),
+		cmd:         newCmd(ctx, cmd, forwardSignals, user, s, env...),
 		stderrSaver: s,
 	}
 }
@@ -95,7 +96,8 @@ func (c *Command) IsRunning() (bool, error) {
 	return false, nil
 }
 
-func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
+func newCmd(ctx context.Context,
+	argv []string, forwardSignals bool, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
 	//#nosec:G204 // this is intentionally setting up a command
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 
@@ -127,6 +129,10 @@ func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefix
 		maybeSwitchUser(ctx, cmd, user)
 	}
 
+	if forwardSignals {
+		notifySignals(ctx, cmd)
+	}
+
 	return cmd
 }
 
@@ -142,4 +148,17 @@ func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
 	} else {
 		o11y.LogError(ctx, "failed to lookup user", err, o11y.Field("username", username))
 	}
+}
+
+func notifySignals(ctx context.Context, cmd *exec.Cmd) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		for sig := range ch {
+			if err := cmd.Process.Signal(sig); err != nil {
+				o11y.LogError(ctx, "error forwarding signal", err, o11y.Field("signal", sig))
+			}
+		}
+	}()
 }
