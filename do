@@ -50,7 +50,8 @@ dev_images() {
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
 
     IMAGE_TAG_SUFFIX="-dev-${CIRCLE_BUILD_NUM:-"0"}-$(git rev-parse --short HEAD)"
-
+    
+    SKIP_PUSH="false" \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX}" \
         PICARD_VERSION="${PICARD_VERSION:-agent}" \
         VERSION="${GORELEASER_VERSION}" \
