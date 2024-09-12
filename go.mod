@@ -3,7 +3,7 @@ module github.com/circleci/runner-init
 go 1.22.5
 
 require (
-	github.com/alecthomas/kong v0.9.0
+	github.com/alecthomas/kong v1.2.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/goccy/go-json v0.10.3
 	github.com/google/go-cmp v0.6.0
