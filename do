@@ -49,7 +49,7 @@ dev_images() {
 
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
 
-    IMAGE_TAG_SUFFIX="-dev-${CIRCLE_BUILD_NUM:-"0"}-$(git rev-parse --short HEAD)"
+    IMAGE_TAG_SUFFIX="-dev-${CIRCLE_BUILD_NUM:-"0"}-$(git rev-parse --short HEAD 2>/dev/null || echo latest)"
     
     SKIP_PUSH="false" \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX}" \

@@ -31,6 +31,9 @@ workflows:
       - images:
           context: [ org-global, runner-image-signing ]
           requires: [ lint, test, build, scan ]
+      - smoke-tests:
+          context: [ org-global, runner-smoke-tests ]
+          requires: [ images ]
 
 jobs:
   lint:
@@ -170,6 +173,29 @@ jobs:
           when: on_fail
       - store_artifacts:
           path: ccc-image-scan-results
+      - notify_failing_main
+
+  smoke-tests:
+    parameters:
+      smoke_tests_branch:
+        description: "The branch in the `runner-smoke-tests` repo to run the smoke tests against."
+        type: string
+        default: "main"    
+      version:
+        description: "The runner agent version to run the smoke tests against."
+        type: string
+        default: "experimental"
+    executor: go
+    environment:
+      SMOKE_TESTS_BRANCH: "<< parameters.smoke_tests_branch >>"
+    steps:
+      - checkout
+      - run:
+          name: "Run the runner smoke tests in the `circleci/runner-smoke-tests` repo on branch `<< parameters.smoke_tests_branch >>`"
+          command: SMOKE_TESTS_VERSION="<< parameters.version >>" ./do smoke-tests
+      - run:
+          name: Cleanup
+          command: PACKAGE_PATTERN="runner-init.*~<< pipeline.number >>-.*" ./do package-cleanup
       - notify_failing_main
 
 commands:
