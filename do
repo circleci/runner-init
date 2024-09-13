@@ -31,28 +31,10 @@ images() {
 
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
 
-    SKIP_PUSH="${SKIP_PUSH:-true}" \
+    skip="${SKIP_PUSH:-true}"
+    SKIP_PUSH="${skip}" \
+        SKIP_PUSH_TEST_AGENT="${SKIP_PUSH_TEST_AGENT:-${skip}}" \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX:-""}" \
-        PICARD_VERSION="${PICARD_VERSION:-agent}" \
-        VERSION="${GORELEASER_VERSION}" \
-        ./bin/goreleaser \
-        --clean \
-        --config "${BUILD_CONFIG:-./.goreleaser/dockers.yaml}" \
-        --skip=validate "$@"
-}
-
-# This variable is used, but shellcheck can't tell.
-# shellcheck disable=SC2034
-help_dev_images="Build and push the Dev Docker images and manifests."
-dev_images() {
-    set -x
-
-    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
-
-    IMAGE_TAG_SUFFIX="-dev-${CIRCLE_BUILD_NUM:-"0"}-$(git rev-parse --short HEAD)"
-    
-    SKIP_PUSH="false" \
-        IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX}" \
         PICARD_VERSION="${PICARD_VERSION:-agent}" \
         VERSION="${GORELEASER_VERSION}" \
         ./bin/goreleaser \
@@ -77,7 +59,8 @@ images-for-server() {
         echo "Building for build-agent version ${picard_version}"
 
         PICARD_VERSION=${picard_version} \
-        IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" \
+            IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" \
+            SKIP_PUSH_TEST_AGENT='true' \
             ./do images
     done
 }
@@ -182,6 +165,7 @@ install-go-bin() {
     wait
 }
 
+# shellcheck disable=SC2034
 help_install_devtools="Install tools that other tasks expect into ./bin"
 install-devtools() {
     install-github-binary golangci golangci-lint '-' '.zip' 1.55.2
