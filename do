@@ -52,6 +52,7 @@ dev_images() {
     IMAGE_TAG_SUFFIX="-dev-${CIRCLE_BUILD_NUM:-"0"}-$(git rev-parse --short HEAD)"
     
     SKIP_PUSH="false" \
+        SKIP_PUSH_TEST_AGENT='true' \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX}" \
         PICARD_VERSION="${PICARD_VERSION:-agent}" \
         VERSION="${GORELEASER_VERSION}" \
@@ -77,7 +78,8 @@ images-for-server() {
         echo "Building for build-agent version ${picard_version}"
 
         PICARD_VERSION=${picard_version} \
-        IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" \
+            IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" \
+            SKIP_PUSH_TEST_AGENT='true' \
             ./do images
     done
 }
