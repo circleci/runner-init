@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"strconv"
 	"strings"
@@ -17,16 +18,18 @@ import (
 )
 
 type Command struct {
-	cmd         *exec.Cmd
-	stderrSaver *prefixSuffixSaver
-	isStarted   atomic.Bool
+	cmd            *exec.Cmd
+	stderrSaver    *prefixSuffixSaver
+	isStarted      atomic.Bool
+	forwardSignals bool
 }
 
-func New(ctx context.Context, cmd []string, user string, env ...string) Command {
+func New(ctx context.Context, cmd []string, forwardSignals bool, user string, env ...string) Command {
 	s := &prefixSuffixSaver{N: 160}
 	return Command{
-		cmd:         newCmd(ctx, cmd, user, s, env...),
-		stderrSaver: s,
+		cmd:            newCmd(ctx, cmd, user, s, env...),
+		stderrSaver:    s,
+		forwardSignals: forwardSignals,
 	}
 }
 
@@ -39,6 +42,10 @@ func (c *Command) Start() error {
 
 	if cmd.Process == nil {
 		return fmt.Errorf("no underlying process")
+	}
+
+	if c.forwardSignals {
+		notifySignals(cmd)
 	}
 
 	c.isStarted.Store(true)
@@ -142,4 +149,15 @@ func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
 	} else {
 		o11y.LogError(ctx, "failed to lookup user", err, o11y.Field("username", username))
 	}
+}
+
+func notifySignals(cmd *exec.Cmd) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		for sig := range ch {
+			_ = cmd.Process.Signal(sig)
+		}
+	}()
 }

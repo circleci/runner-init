@@ -95,7 +95,7 @@ func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
 
 func (o *Orchestrator) executeEntrypoint(ctx context.Context) error {
 	c := o.config.Cmd
-	o.entrypoint = cmd.New(ctx, c, "")
+	o.entrypoint = cmd.New(ctx, c, true, "")
 
 	if err := o.entrypoint.Start(); err != nil {
 		return fmt.Errorf("error starting custom entrypoint %s: %w", c, err)
@@ -107,7 +107,7 @@ func (o *Orchestrator) executeAgent(ctx context.Context) error {
 	cfg := o.config
 	agent := cfg.Agent()
 
-	o.taskAgent = cmd.New(ctx, agent.Cmd, cfg.User, agent.Env...)
+	o.taskAgent = cmd.New(ctx, agent.Cmd, false, cfg.User, agent.Env...)
 
 	if err := o.taskAgent.StartWithStdin([]byte(cfg.Token.Raw())); err != nil {
 		return retryableErrorf("failed to start task agent command: %w", err)
