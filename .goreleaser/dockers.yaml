@@ -35,7 +35,7 @@ dockers:
 
   - id: testinit-amd64
     image_templates: ["circleci/runner-init:test-agent-amd64"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
+    skip_push: "{{ .Env.SKIP_PUSH_TEST_AGENT }}"
     dockerfile: ./docker/test.Dockerfile
     use: buildx
     build_flag_templates:
@@ -47,7 +47,7 @@ dockers:
 
   - id: testinit-arm64
     image_templates: ["circleci/runner-init:test-agent-arm64"]
-    skip_push: "{{.Env.SKIP_PUSH}}"
+    skip_push: "{{ .Env.SKIP_PUSH_TEST_AGENT }}"
     dockerfile: ./docker/test.Dockerfile
     use: buildx
     build_flag_templates:
@@ -68,7 +68,7 @@ docker_manifests:
     image_templates:
       - "circleci/runner-init:test-agent-amd64"
       - "circleci/runner-init:test-agent-arm64"
-    skip_push: "{{.Env.SKIP_PUSH}}"
+    skip_push: "{{ .Env.SKIP_PUSH_TEST_AGENT }}"
 
 docker_signs:
   - cmd: ./bin/cosign
