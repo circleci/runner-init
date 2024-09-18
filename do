@@ -45,26 +45,6 @@ images() {
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
-help_dev_images="Build and push the Dev Docker images and manifests."
-dev_images() {
-    set -x
-
-    [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
-
-    IMAGE_TAG_SUFFIX="-dev-${CIRCLE_BUILD_NUM:-"0"}-$(git rev-parse --short HEAD 2>/dev/null || echo latest)"
-    
-    SKIP_PUSH="false" \
-        IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX}" \
-        PICARD_VERSION="${PICARD_VERSION:-agent}" \
-        VERSION="${GORELEASER_VERSION}" \
-        ./bin/goreleaser \
-        --clean \
-        --config "${BUILD_CONFIG:-./.goreleaser/dockers.yaml}" \
-        --skip=validate "$@"
-}
-
-# This variable is used, but shellcheck can't tell.
-# shellcheck disable=SC2034
 help_images_for_server="Build and push the Docker images and manifests for supported server versions."
 images-for-server() {
     MAJOR_SERVER_VERSION=4
