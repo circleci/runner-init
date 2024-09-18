@@ -196,10 +196,7 @@ jobs:
       - checkout
       - run:
           name: "Run the runner smoke tests in the `circleci/runner-smoke-tests` repo on branch `<< parameters.smoke_tests_branch >>`"
-          command: SMOKE_TESTS_VERSION="<< parameters.version >>" ./do smoke-tests
-      - run:
-          name: Cleanup
-          command: PACKAGE_PATTERN="runner-init.*~<< pipeline.number >>-.*" ./do package-cleanup
+          command: SMOKE_TESTS_VERSION="<< parameters.version >>" SMOKE_TESTS_MACHINE_SKIP=true ./do smoke-tests
       - notify_failing_main
 
 commands:
