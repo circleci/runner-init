@@ -109,11 +109,11 @@ jobs:
       - run:
           name: Create cosign.key
           command: echo -e ${COSIGN_KEY} >cosign.key
+      - generate-img-version
       - run:
           name: Build and push dev images for use in the smoke tests
           command: |
-            IMAGE_TAG_SUFFIX="-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)" \
-              SKIP_PUSH='false' \
+            SKIP_PUSH='false' \
               SKIP_PUSH_TEST_AGENT='true' \
               ./do images
       - run:
@@ -184,7 +184,7 @@ jobs:
       smoke_tests_branch:
         description: "The branch in the `runner-smoke-tests` repo to run the smoke tests against."
         type: string
-        default: "main"    
+        default: "main"
       version:
         description: "The runner agent version to run the smoke tests against."
         type: string
@@ -325,3 +325,10 @@ commands:
 
                   curl --fail -H 'Content-type: application/json' \
                       --data @/tmp/slack-webhook-body "${SLACK_WEBHOOK}"
+
+  generate-img-version:
+    steps:
+    - run:
+        name: "Generate a version number for the dev release"
+        command: |
+          export IMAGE_TAG_SUFFIX="-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)" >> $BASH_ENV
