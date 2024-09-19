@@ -32,6 +32,7 @@ type Machine struct {
 
 type Kubernetes struct {
 	Skip            bool   `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
+	RunnerInitTag   string `env:"RUNNER_INIT_TAG" default:"" help:"The runner-init image tag to use in the smoke tests."`
 	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
 }
 
@@ -95,6 +96,7 @@ func TestSmoke(t *testing.T) {
 				IsCanary:      cli.Tests.IsCanary,
 				ExtraPipelineParameters: map[string]any{
 					"kubernetes_helm_chart_branch": cli.Tests.Kubernetes.HelmChartBranch,
+					"kubernetes_runner_init_tag":   cli.Tests.Kubernetes.RunnerInitTag,
 				},
 			}
 			st.Setup(t)

@@ -31,6 +31,9 @@ workflows:
       - images:
           context: [ org-global, runner-image-signing ]
           requires: [ lint, test, build, scan ]
+      - smoke-tests:
+          context: [ org-global, runner-smoke-tests ]
+          requires: [ images ]
 
 jobs:
   lint:
@@ -92,6 +95,8 @@ jobs:
   images:
     executor: linux_machine
     steps:
+      - attach_workspace:
+          at: /tmp/workspace
       - goreleaser_setup
       - docker_login
       - notify_slack:
@@ -109,8 +114,9 @@ jobs:
       - run:
           name: Build and push dev images for use in the smoke tests
           command: |
-            IMAGE_TAG_SUFFIX="-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)" \
-              SKIP_PUSH='false' \
+            echo "export IMAGE_TAG_SUFFIX=\"-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)\"" >> /tmp/workspace/environment
+            source /tmp/workspace/environment
+            SKIP_PUSH='false' \
               SKIP_PUSH_TEST_AGENT='true' \
               ./do images
       - run:
@@ -137,6 +143,10 @@ jobs:
           name: Build and maybe push images for server
           command: ./do images-for-server
       - notify_failing_main
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - environment
 
   scan:
     executor: ccc
@@ -174,6 +184,38 @@ jobs:
           when: on_fail
       - store_artifacts:
           path: ccc-image-scan-results
+      - notify_failing_main
+
+  smoke-tests:
+    parameters:
+      smoke_tests_branch:
+        description: "The branch in the `runner-smoke-tests` repo to run the smoke tests against."
+        type: string
+        default: "main"
+      version:
+        description: "The version of the runner to test."
+        type: string
+        default: "experimental"
+      k8s_helm_chart_branch:
+        description: "The circleci-runner helm chart repo branch to run the smoke tests against."
+        type: string
+        default: "main"
+    executor: go
+    environment:
+      SMOKE_TESTS_BRANCH: "<< parameters.smoke_tests_branch >>"
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: "Run the runner smoke tests in the `circleci/runner-smoke-tests` repo on branch `<< parameters.smoke_tests_branch >>`"
+          command: |
+            source /tmp/workspace/environment
+            SMOKE_TESTS_VERSION="<< parameters.version >>" \
+            SMOKE_TESTS_KUBERNETES_RUNNER_INIT_TAG="agent$IMAGE_TAG_SUFFIX" \
+            SMOKE_TESTS_KUBERNETES_HELM_CHART_BRANCH="<< parameters.k8s_helm_chart_branch >>" \
+            SMOKE_TESTS_MACHINE_SKIP=true \
+            ./do smoke-tests
       - notify_failing_main
 
 commands:
