@@ -95,6 +95,8 @@ jobs:
   images:
     executor: linux_machine
     steps:
+      - attach_workspace:
+          at: /tmp/workspace
       - goreleaser_setup
       - docker_login
       - notify_slack:
@@ -109,10 +111,11 @@ jobs:
       - run:
           name: Create cosign.key
           command: echo -e ${COSIGN_KEY} >cosign.key
-      - generate-img-version
       - run:
           name: Build and push dev images for use in the smoke tests
           command: |
+            echo "export IMAGE_TAG_SUFFIX=\"-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)\"" >> /tmp/workspace/environment
+            source /tmp/workspace/environment
             SKIP_PUSH='false' \
               SKIP_PUSH_TEST_AGENT='true' \
               ./do images
@@ -140,6 +143,10 @@ jobs:
           name: Build and maybe push images for server
           command: ./do images-for-server
       - notify_failing_main
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - environment
 
   scan:
     executor: ccc
@@ -198,10 +205,12 @@ jobs:
       SMOKE_TESTS_BRANCH: "<< parameters.smoke_tests_branch >>"
     steps:
       - checkout
-      - generate-img-version
+      - attach_workspace:
+          at: /tmp/workspace
       - run:
           name: "Run the runner smoke tests in the `circleci/runner-smoke-tests` repo on branch `<< parameters.smoke_tests_branch >>`"
           command: |
+            source /tmp/workspace/environment
             SMOKE_TESTS_VERSION="<< parameters.version >>" \
             SMOKE_TESTS_KUBERNETES_RUNNER_INIT_TAG="agent$IMAGE_TAG_SUFFIX" \
             SMOKE_TESTS_KUBERNETES_HELM_CHART_BRANCH="<< parameters.k8s_helm_chart_branch >>" \
@@ -335,10 +344,3 @@ commands:
 
                   curl --fail -H 'Content-type: application/json' \
                       --data @/tmp/slack-webhook-body "${SLACK_WEBHOOK}"
-
-  generate-img-version:
-    steps:
-    - run:
-        name: "Generate a version number for the dev release"
-        command: |
-          echo "export IMAGE_TAG_SUFFIX=\"-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)\"" >> $BASH_ENV
