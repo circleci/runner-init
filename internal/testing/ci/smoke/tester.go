@@ -21,7 +21,6 @@ type Tester struct {
 	TriggerSource           string
 	AgentDriver             string
 	AgentVersion            string
-	RunnerInitVersion       string
 	IsCanary                bool
 	ExtraPipelineParameters map[string]any
 
@@ -40,9 +39,8 @@ func (st *Tester) Setup(t *testing.T) {
 	t.Logf("Triggering pipeline for project %q on branch %q", projectSlug, st.Branch)
 	t.Logf("Agent driver %q", st.AgentDriver)
 	t.Logf("Agent version %q", st.AgentVersion)
-	t.Logf("Runner Init Image Version %q", st.RunnerInitVersion)
-	t.Logf("Is this a canary? %t", st.IsCanary)
 	t.Logf("Extra pipeline parameters: %v", st.ExtraPipelineParameters)
+	t.Logf("Is this a canary? %t", st.IsCanary)
 
 	pipelineResp, err := st.triggerPipeline()
 	assert.NilError(t, err)
@@ -135,7 +133,6 @@ type pipelineResponse struct {
 func (st *Tester) triggerPipeline() (resp pipelineResponse, err error) {
 	parameters := st.ExtraPipelineParameters
 	parameters["driver"] = st.AgentDriver
-	parameters["kubernetes_runner_init_tag"] = st.RunnerInitVersion
 	parameters["trigger_source"] = st.TriggerSource
 	parameters["version"] = st.AgentVersion
 

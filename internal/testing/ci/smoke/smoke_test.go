@@ -31,10 +31,9 @@ type Machine struct {
 }
 
 type Kubernetes struct {
-	Skip              bool   `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
-	AgentVersion      string `env:"AGENT_VERSION" default:"experimental" help:"The agent version to use in the tests."`
-	RunnerInitVersion string `env:"RUNNER_INIT_VERSION" default:"experimental" help:"The runner-init version to use in the tests."`
-	HelmChartBranch   string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
+	Skip            bool   `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
+	RunnerInitTag   string `env:"RUNNER_INIT_TAG" default:"" help:"The runner-init image tag to use in the smoke tests."`
+	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
 }
 
 var cli *CLI
@@ -89,15 +88,15 @@ func TestSmoke(t *testing.T) {
 			}
 
 			st := Tester{
-				AgentDriver:       tt.driver,
-				CircleToken:       cli.CircleToken,
-				TriggerSource:     cli.TriggerSource,
-				Branch:            cli.Tests.Branch,
-				AgentVersion:      cli.Tests.Version,
-				RunnerInitVersion: cli.Tests.Kubernetes.RunnerInitVersion,
-				IsCanary:          cli.Tests.IsCanary,
+				AgentDriver:   tt.driver,
+				CircleToken:   cli.CircleToken,
+				TriggerSource: cli.TriggerSource,
+				Branch:        cli.Tests.Branch,
+				AgentVersion:  cli.Tests.Version,
+				IsCanary:      cli.Tests.IsCanary,
 				ExtraPipelineParameters: map[string]any{
 					"kubernetes_helm_chart_branch": cli.Tests.Kubernetes.HelmChartBranch,
+					"kubernetes_runner_init_tag":   cli.Tests.Kubernetes.RunnerInitTag,
 				},
 			}
 			st.Setup(t)
