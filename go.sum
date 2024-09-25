@@ -18,8 +18,8 @@ github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK3
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/circleci/ex v1.0.11584-02b1501 h1:sd0zScYLCpy+SLAM6laeEQ3uMPWSCtD1zA0H1VtuUlI=
-github.com/circleci/ex v1.0.11584-02b1501/go.mod h1:lWJ6fHgrcG6+AmKZKEhim243sLWYxpT5fWsl+dKF0a0=
+github.com/circleci/ex v1.0.11654-dd461cc h1:9tr0GsyftRhyboLsVTSO54G6kMCpFygmeHfn2f5nMwM=
+github.com/circleci/ex v1.0.11654-dd461cc/go.mod h1:qxiLhL8uKTYSBgvs7+1y8OehD753Mhz25NRcXiYD+Fo=
 github.com/cloudwego/base64x v0.1.4 h1:jwCgWpFanWmN8xoIUHa2rtzmkd5J2plF/dnLS6Xd/0Y=
 github.com/cloudwego/base64x v0.1.4/go.mod h1:0zlkT4Wn5C6NdauXdJRhSKRlJvmclQ1hhJgA0rcu/8w=
 github.com/cloudwego/iasm v0.2.0 h1:1KNIy1I1H9hNNFEEH3DVnI4UujN+1zjpuk6gwHLTssg=
