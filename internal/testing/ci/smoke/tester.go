@@ -16,6 +16,7 @@ const projectSlug = "github/circleci/runner-smoke-tests"
 
 type Tester struct {
 	Branch      string
+	CircleHost  string
 	CircleToken secret.String
 
 	TriggerSource           string
@@ -31,7 +32,7 @@ type Tester struct {
 func (st *Tester) Setup(t *testing.T) {
 	st.client = httpclient.New(httpclient.Config{
 		Name:       "runner-smoke-tests",
-		BaseURL:    "https://circleci.com/api/v2",
+		BaseURL:    st.CircleHost + "/api/v2",
 		AuthHeader: "Circle-Token",
 		AuthToken:  st.CircleToken.Raw(),
 	})
