@@ -11,6 +11,7 @@ import (
 )
 
 type CLI struct {
+	CircleHost    string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://circleci.com" help:"URL to your CircleCI host."`
 	CircleToken   secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API."`
 	TriggerSource string        `name:"trigger-source" env:"CIRCLE_BUILD_URL" default:"dev" help:"Where this pipeline was triggered from."`
 	T             string        `name:"smoke.test" short:"t"`
@@ -89,6 +90,7 @@ func TestSmoke(t *testing.T) {
 
 			st := Tester{
 				AgentDriver:   tt.driver,
+				CircleHost:    cli.CircleHost,
 				CircleToken:   cli.CircleToken,
 				TriggerSource: cli.TriggerSource,
 				Branch:        cli.Tests.Branch,
