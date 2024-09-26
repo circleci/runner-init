@@ -13,7 +13,7 @@ jobs:
       - run:
           name: Filter Only Agent Tagged Images
           command: |
-            export IMAGE_TAG="$(echo << pipeline.trigger_parameters.webhook.body >> | jq .push_data.tag)"
+            export IMAGE_TAG="$(echo '<< pipeline.trigger_parameters.webhook.body >>' | jq .push_data.tag)"
              # if workflow is trigged by a webhook verify it was for a new "agent" tag for task-agent
             if [[ "<< pipeline.trigger_source >>" = "webhook" ]]; then
             # cancel workflow if it wasn't triggered for a new "agent" image build on task-agent
