@@ -49,11 +49,16 @@ help_images_for_server="Build and push the Docker images and manifests for suppo
 images-for-server() {
     MAJOR_SERVER_VERSION=4
     MINOR_VERSION_START=3
-    MINOR_VERSION_END=5
+    MINOR_VERSION_END=7
 
     for minor in $(seq ${MINOR_VERSION_START} ${MINOR_VERSION_END}); do
+        if [ "${minor}" -eq "${MINOR_VERSION_END}" ]; then
+            branch="main"
+        else
+            branch="server-${MAJOR_SERVER_VERSION}.${minor}"
+        fi
 
-        git -C "${SERVER_REPO_PATH:?'server repo path required'}" checkout server-${MAJOR_SERVER_VERSION}."${minor}"
+        git -C "${SERVER_REPO_PATH:?'server repo path required'}" checkout "${branch}"
 
         picard_version="$(yq .circleci/picard -r "${SERVER_REPO_PATH}/images.yaml")"
         echo "Building for build-agent version ${picard_version}"
