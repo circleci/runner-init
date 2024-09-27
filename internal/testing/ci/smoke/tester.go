@@ -37,7 +37,7 @@ func (st *Tester) Setup(t *testing.T) {
 		AuthToken:  st.CircleToken.Raw(),
 	})
 
-	t.Logf("Triggering pipeline for project %q on branch %q", projectSlug, st.Branch)
+	t.Logf("Triggering pipeline for project %q on branch %q on host %q", projectSlug, st.Branch, st.CircleHost)
 	t.Logf("Agent driver %q", st.AgentDriver)
 	t.Logf("Agent version %q", st.AgentVersion)
 	t.Logf("Extra pipeline parameters: %v", st.ExtraPipelineParameters)
