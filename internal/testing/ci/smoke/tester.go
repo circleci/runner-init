@@ -51,7 +51,7 @@ func (st *Tester) Setup(t *testing.T) {
 	st.pipelineResp = pipelineResp
 
 	t.Logf("Pipeline number %d was created; checking workflows...", pipelineResp.Number)
-	t.Logf("Workflows URL: https://circleci.com/api/v2/pipeline/%s/workflow", st.pipelineResp.ID)
+	t.Logf("Workflows URL: %s/api/v2/pipeline/%s/workflow", st.CircleHost, st.pipelineResp.ID)
 }
 
 type TestCase struct {
@@ -77,15 +77,15 @@ func (st *Tester) Execute(t *testing.T, tt TestCase) {
 		}
 
 		if !isFound {
-			t.Logf("Found workflow %q: https://circleci.com/workflow-run/%s", tt.WorkflowName, workflow.ID)
+			t.Logf("Found workflow %q: %s/workflow-run/%s", tt.WorkflowName, st.CircleHost, workflow.ID)
 			isFound = true
 		}
 
 		if workflow.isStillRunning() {
 			if i%300 == 0 {
-				t.Logf("Workflow %q is still running: https://circleci.com/workflow-run/%s", tt.WorkflowName, workflow.ID)
+				t.Logf("Workflow %q is still running: %s/workflow-run/%s", tt.WorkflowName, st.CircleHost, workflow.ID)
 			}
-			return poll.Continue("Workflow %q is still running: https://circleci.com/workflow-run/%s", tt.WorkflowName, workflow.ID)
+			return poll.Continue("Workflow %q is still running: %s/workflow-run/%s", tt.WorkflowName, st.CircleHost, workflow.ID)
 		}
 
 		if workflow.Status != tt.WantWorkflowStatus {
