@@ -3,6 +3,7 @@ package smoke
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"testing"
 	"time"
 
@@ -15,9 +16,11 @@ import (
 const projectSlug = "github/circleci/runner-smoke-tests"
 
 type Tester struct {
-	Branch      string
-	CircleHost  string
-	CircleToken secret.String
+	Branch          string
+	CircleHost      string
+	RunnerAPIURL    string
+	CircleToken     secret.String
+	RunnerNamespace string
 
 	TriggerSource           string
 	AgentDriver             string
@@ -136,6 +139,16 @@ func (st *Tester) triggerPipeline() (resp pipelineResponse, err error) {
 	parameters["driver"] = st.AgentDriver
 	parameters["trigger_source"] = st.TriggerSource
 	parameters["version"] = st.AgentVersion
+
+	u, err := url.Parse(st.CircleHost)
+	if err != nil {
+		return resp, err
+	}
+	if u.Host != "circleci.com" {
+		parameters["circleci_domain"] = u.Host
+		parameters["runner_api_url"] = st.CircleHost
+		parameters["namespace"] = st.RunnerNamespace
+	}
 
 	req := pipelineRequest{
 		Branch:     st.Branch,
