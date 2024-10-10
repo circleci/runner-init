@@ -4,7 +4,6 @@ package smoke
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -12,10 +11,8 @@ import (
 )
 
 type CLI struct {
-	CircleHost    string        `name:"circle-host" env:"CIRCLE_HOST" help:"The URL of your CircleCI host. This setting takes precedence over individual driver configurations and applies universally to all test cases."`
-	CircleToken   secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" help:"An API token to authenticate with the CircleCI API. This setting overrides individual driver configurations and is applied to all test cases."`
-	TriggerSource string        `name:"trigger-source" env:"CIRCLE_BUILD_URL" default:"dev" help:"Where this pipeline was triggered from."`
-	T             string        `name:"smoke.test" short:"t"`
+	TriggerSource string `name:"trigger-source" env:"CIRCLE_BUILD_URL" default:"dev" help:"Specifies where this pipeline was triggered from, such as a URL or build source. This is used to track the origin of build triggers."`
+	T             string `name:"smoke.test" short:"t"`
 
 	Tests struct {
 		Branch   string `name:"branch" env:"BRANCH" default:"main" help:"Which branch to run the tests on."`
@@ -29,17 +26,18 @@ type CLI struct {
 }
 
 type Machine struct {
-	CircleHost  string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://circleci.com" help:"URL to your CircleCI host for the machine tests."`
-	CircleToken secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API for the machine tests."`
-
-	Skip bool `env:"SKIP" help:"Skip tests for the machine driver."`
+	CircleHost      string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://circleci.com" help:"URL to your CircleCI host for the machine tests."`
+	CircleToken     secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API for the machine tests."`
+	RunnerNamespace string        `name:"runner-namespace" env:"RUNNER_NAMESPACE" default:"circleci-runner" help:"Namespace of the machine runner resource classes."`
+	Skip            bool          `env:"SKIP" help:"Skip tests for the machine driver."`
 }
 
 type Kubernetes struct {
-	CircleHost  string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://k9s.sphereci.com" help:"URL to your CircleCI host for the Kubernetes tests."`
-	CircleToken secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API for the Kubernetes tests."`
+	CircleHost      string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://k9s.sphereci.com" help:"URL to your CircleCI host for the Kubernetes tests."`
+	CircleToken     secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API for the Kubernetes tests."`
+	RunnerNamespace string        `name:"runner-namespace" env:"RUNNER_NAMESPACE" default:"k9s" help:"Namespace of the container runner resource classes."`
+	Skip            bool          `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
 
-	Skip            bool   `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
 	RunnerInitTag   string `env:"RUNNER_INIT_TAG" default:"" help:"The runner-init image tag to use in the smoke tests."`
 	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
 }
@@ -48,17 +46,7 @@ var cli *CLI
 
 func TestMain(m *testing.M) {
 	cli = &CLI{}
-	_ = kong.Parse(cli, kong.Resolvers(
-		kong.ResolverFunc(func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
-			if strings.HasSuffix(flag.Name, "circle-host") && cli.CircleHost != "" {
-				return cli.CircleHost, nil
-			}
-			if strings.HasSuffix(flag.Name, "circle-api-token") && cli.CircleToken.Raw() != "" {
-				return cli.CircleToken.Raw(), nil
-			}
-			return nil, nil
-		}),
-	))
+	kong.Parse(cli)
 	os.Exit(m.Run())
 }
 
@@ -69,6 +57,7 @@ func TestSmoke(t *testing.T) {
 		driver      string
 		circleHost  string
 		circleToken secret.String
+		namespace   string
 		skip        bool
 		cases       []TestCase
 	}{
@@ -77,6 +66,7 @@ func TestSmoke(t *testing.T) {
 			driver:      "machine",
 			circleHost:  cli.Tests.Machine.CircleHost,
 			circleToken: cli.Tests.Machine.CircleToken,
+			namespace:   cli.Tests.Machine.RunnerNamespace,
 			skip:        cli.Tests.Machine.Skip,
 			cases: []TestCase{
 				{
@@ -91,6 +81,7 @@ func TestSmoke(t *testing.T) {
 			driver:      "kubernetes",
 			circleHost:  cli.Tests.Kubernetes.CircleHost,
 			circleToken: cli.Tests.Kubernetes.CircleToken,
+			namespace:   cli.Tests.Kubernetes.RunnerNamespace,
 			skip:        cli.Tests.Kubernetes.Skip,
 			cases: []TestCase{
 				{
@@ -112,13 +103,14 @@ func TestSmoke(t *testing.T) {
 			}
 
 			st := Tester{
-				AgentDriver:   tt.driver,
-				CircleHost:    tt.circleHost,
-				CircleToken:   tt.circleToken,
-				TriggerSource: cli.TriggerSource,
-				Branch:        cli.Tests.Branch,
-				AgentVersion:  cli.Tests.Version,
-				IsCanary:      cli.Tests.IsCanary,
+				AgentDriver:     tt.driver,
+				CircleHost:      tt.circleHost,
+				CircleToken:     tt.circleToken,
+				RunnerNamespace: tt.namespace,
+				TriggerSource:   cli.TriggerSource,
+				Branch:          cli.Tests.Branch,
+				AgentVersion:    cli.Tests.Version,
+				IsCanary:        cli.Tests.IsCanary,
 				ExtraPipelineParameters: map[string]any{
 					"kubernetes_helm_chart_branch": cli.Tests.Kubernetes.HelmChartBranch,
 					"kubernetes_runner_init_tag":   cli.Tests.Kubernetes.RunnerInitTag,
