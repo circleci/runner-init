@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
@@ -77,15 +78,15 @@ func (st *Tester) Execute(t *testing.T, tt TestCase) {
 		}
 
 		if !isFound {
-			t.Logf("Found workflow %q: %s/workflow-run/%s", tt.WorkflowName, st.CircleHost, workflow.ID)
+			t.Logf("Found workflow %q: %s", tt.WorkflowName, st.workflowURL(workflow))
 			isFound = true
 		}
 
 		if workflow.isStillRunning() {
 			if i%300 == 0 {
-				t.Logf("Workflow %q is still running: %s/workflow-run/%s", tt.WorkflowName, st.CircleHost, workflow.ID)
+				t.Logf("Workflow %q is still running: %s", tt.WorkflowName, st.workflowURL(workflow))
 			}
-			return poll.Continue("Workflow %q is still running: %s/workflow-run/%s", tt.WorkflowName, st.CircleHost, workflow.ID)
+			return poll.Continue("Workflow %q is still running: %s", tt.WorkflowName, st.workflowURL(workflow))
 		}
 
 		if workflow.Status != tt.WantWorkflowStatus {
@@ -107,6 +108,13 @@ func (st *Tester) Execute(t *testing.T, tt TestCase) {
 	if tt.CheckJobs != nil {
 		tt.CheckJobs(t, jobs.Items)
 	}
+}
+
+func (st *Tester) workflowURL(wf *workflow) string {
+	u, _ := url.Parse(st.CircleHost)
+	r, _ := url.JoinPath(u.Scheme+"://app."+u.Host,
+		"pipelines", projectSlug, strconv.Itoa(wf.PipelineNumber), "workflows", wf.ID)
+	return r
 }
 
 func findWorkflow(workflows workflowsResponse, name string) *workflow {
