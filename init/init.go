@@ -2,9 +2,13 @@ package init
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/pierrec/lz4"
 )
 
 // Run function performs the copying of specific files and symlink creation
@@ -16,8 +20,16 @@ func Run(srcDir, destDir string) error {
 		return err
 	}
 
-	// Copy the task agent binary
+	// Check and decompress the task agent binary if needed
 	agentSrc := filepath.Join(srcDir, "circleci-agent")
+	if strings.HasSuffix(agentSrc, ".lz4") {
+		decompressedAgentSrc, err := decompressLZ4(agentSrc)
+		if err != nil {
+			return err
+		}
+		agentSrc = decompressedAgentSrc
+	}
+	// Copy the task agent binary
 	agentDest := filepath.Join(destDir, "circleci-agent")
 	if err := copyFile(agentSrc, agentDest); err != nil {
 		return err
@@ -59,4 +71,26 @@ func copyFile(srcPath, destPath string) (err error) {
 	}
 
 	return err
+}
+
+func decompressLZ4(filePath string) (string, error) {
+	inFile, err := os.Open(filePath) //#nosec:G304
+	if err != nil {
+		return "", fmt.Errorf("failed to open input file %s: %w", filePath, err)
+	}
+	defer inFile.Close()
+
+	outPath := strings.TrimSuffix(filePath, ".lz4")
+	outFile, err := os.Create(outPath) //#nosec:G304
+	if err != nil {
+		return "", fmt.Errorf("failed to create output file %s: %w", outPath, err)
+	}
+	defer outFile.Close()
+
+	lz4Reader := lz4.NewReader(inFile)
+	if _, err := io.Copy(outFile, lz4Reader); err != nil {
+		return "", fmt.Errorf("failed to decompress %s: %w", filePath, err)
+	}
+
+	return outPath, nil
 }

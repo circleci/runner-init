@@ -8,6 +8,7 @@ require (
 	github.com/goccy/go-json v0.10.3
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-reap v0.0.0-20230117204525-bf69c61a7b71
+	github.com/pierrec/lz4 v2.6.1+incompatible
 	gotest.tools/v3 v3.5.1
 )
 
@@ -16,6 +17,7 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/frankban/quicktest v1.14.6 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
