@@ -8,3 +8,5 @@ Flags:
       --health-check-addr=":7623"
                 Address for the health check API to listen on
                 ($CIRCLECI_GOAT_HEALTH_CHECK_ADDR).
+      --prerun-cmd=PRERUN-CMD,...
+                ($CIRCLECI_GOAT_PRERUN_CMD)

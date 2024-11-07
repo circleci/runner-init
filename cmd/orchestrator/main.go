@@ -40,7 +40,8 @@ type runTaskCmd struct {
 	HealthCheckAddr        string        `default:":7623" help:"Address for the health check API to listen on."`
 
 	// Task environment configuration should be injected through a Kubernetes Secret
-	Config task.Config `required:"" hidden:"-"`
+	Config    task.Config `required:"" hidden:"-"`
+	PrerunCmd []string
 }
 
 func main() {
@@ -101,6 +102,11 @@ func run(version, date string) (err error) {
 
 func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (*task.Orchestrator, error) {
 	c := cli.RunTask
+
+	// TODO: This is temporary and will be removed after testing
+	if len(cli.RunTask.PrerunCmd) > 1 {
+		c.Config.PreCmd = cli.RunTask.PrerunCmd
+	}
 
 	// Strip the orchestrator configuration from the environment
 	_ = os.Unsetenv("CIRCLECI_GOAT_CONFIG")

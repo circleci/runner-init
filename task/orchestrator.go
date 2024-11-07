@@ -11,6 +11,7 @@ import (
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/task/cmd"
+	"github.com/circleci/runner-init/task/step"
 )
 
 type Orchestrator struct {
@@ -45,12 +46,23 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 	o.reaper.Enable(ctx)
 
 	defer func() {
+		if len(o.config.PostCmd) > 0 {
+			postErr := o.executeCmd(ctx, "post", o.config.PostCmd)
+			err = errors.Join(postErr, err)
+		}
+
 		err = o.shutdown(ctx, err)
 	}()
 
 	if len(o.config.Cmd) > 0 {
 		// If a custom entrypoint is specified, execute it in the background
-		if err := o.executeEntrypoint(ctx); err != nil {
+		if err := o.startEntrypoint(ctx); err != nil {
+			return err
+		}
+	}
+
+	if len(o.config.PreCmd) > 0 {
+		if err := o.executeCmd(ctx, "pre", o.config.PreCmd); err != nil {
 			return err
 		}
 	}
@@ -93,7 +105,19 @@ func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (o *Orchestrator) executeEntrypoint(ctx context.Context) error {
+func (o *Orchestrator) executeCmd(ctx context.Context, prefix string, c []string) error {
+	streamer := step.NewStreamer(ctx, o.runnerClient, 97)
+	defer streamer.End()
+
+	command := cmd.NewWithOutput(ctx, c, streamer.Out(), true, "")
+
+	if err := command.Run(); err != nil {
+		return fmt.Errorf("error running %s command %s: %w", prefix, c, err)
+	}
+	return nil
+}
+
+func (o *Orchestrator) startEntrypoint(ctx context.Context) error {
 	c := o.config.Cmd
 	o.entrypoint = cmd.New(ctx, c, true, "")
 

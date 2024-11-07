@@ -12,7 +12,9 @@ import (
 )
 
 type Config struct {
+	PreCmd              []string `json:"pre_cmd"`
 	Cmd                 []string `json:"cmd"`
+	PostCmd             []string `json:"post_cmd"`
 	User                string   `json:"user"`
 	TaskID              string   `json:"task_id"`
 	EnableUnsafeRetries bool     `json:"enable_unsafe_retries"`

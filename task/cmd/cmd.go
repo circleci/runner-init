@@ -27,7 +27,17 @@ type Command struct {
 func New(ctx context.Context, cmd []string, forwardSignals bool, user string, env ...string) Command {
 	s := &prefixSuffixSaver{N: 160}
 	return Command{
-		cmd:            newCmd(ctx, cmd, user, s, env...),
+		cmd:            newCmd(ctx, cmd, nil, user, s, env...),
+		stderrSaver:    s,
+		forwardSignals: forwardSignals,
+	}
+}
+
+func NewWithOutput(ctx context.Context,
+	cmd []string, out io.Writer, forwardSignals bool, user string, env ...string) Command {
+	s := &prefixSuffixSaver{N: 160}
+	return Command{
+		cmd:            newCmd(ctx, cmd, out, user, s, env...),
 		stderrSaver:    s,
 		forwardSignals: forwardSignals,
 	}
@@ -87,6 +97,13 @@ func (c *Command) Wait() error {
 	return err
 }
 
+func (c *Command) Run() error {
+	if err := c.Start(); err != nil {
+		return err
+	}
+	return c.Wait()
+}
+
 func (c *Command) IsRunning() (bool, error) {
 	if !c.isStarted.Load() {
 		return false, nil
@@ -102,7 +119,8 @@ func (c *Command) IsRunning() (bool, error) {
 	return false, nil
 }
 
-func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
+func newCmd(ctx context.Context,
+	argv []string, out io.Writer, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
 	//#nosec:G204 // this is intentionally setting up a command
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 
@@ -119,6 +137,10 @@ func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefix
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = io.MultiWriter(os.Stderr, stderrSaver)
+	if out != nil {
+		cmd.Stdout = io.MultiWriter(cmd.Stdout, out)
+		cmd.Stderr = io.MultiWriter(cmd.Stderr, out)
+	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid:   true,
