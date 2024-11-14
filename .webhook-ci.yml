@@ -16,7 +16,7 @@ jobs:
             # If workflow is triggered by a webhook, verify it was for a new "agent" tag for task-agent
             if [[ "<< pipeline.trigger_source >>" = "webhook" ]]; then
               # Halt the step if it wasn't triggered for a new "agent" image build on task-agent
-              if [[ ! "$IMAGE_TAG" = "agent" ]]; then
+              if [[ ! "$IMAGE_TAG" = '"agent"' ]]; then
                 echo "Step halted because the image tag is not 'agent'."
                 circleci-agent step halt
               fi
