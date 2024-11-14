@@ -2,37 +2,29 @@ version: 2.1
 workflows:
   webhook:
     jobs:
-      - filter-webhook
-      - trigger-workflow:
-          requires: [ filter-webhook ]
+      - trigger-workflow
 jobs:
-  filter-webhook:
-    docker:
-      - image: cimg/base:current
-    steps:
-      - run:
-          name: Filter Only Agent Tagged Images
-          command: |
-            export IMAGE_TAG="$(echo '<< pipeline.trigger_parameters.webhook.body >>' | jq .push_data.tag)"
-             # if workflow is trigged by a webhook verify it was for a new "agent" tag for task-agent
-            if [[ "<< pipeline.trigger_source >>" = "webhook" ]]; then
-            # cancel workflow if it wasn't triggered for a new "agent" image build on task-agent
-              if [[ ! "$IMAGE_TAG" = "agent" ]]; then
-                curl --request POST \
-                  --url "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/cancel" \
-                  --header "Circle-Token: ${WEBHOOK_CCI_API_TOKEN}"
-              fi
-            else
-              # we should never get here by automation, but just incase
-              curl --request POST \
-                --url "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/cancel" \
-                --header "Circle-Token: ${WEBHOOK_CCI_API_TOKEN}"
-            fi
-
   trigger-workflow:
     docker:
       - image: cimg/base:current
     steps:
+      - run:
+          name: Filter only agent tagged images
+          command: |
+            export IMAGE_TAG="$(echo '<< pipeline.trigger_parameters.webhook.body >>' | jq .push_data.tag)"
+
+            # If workflow is triggered by a webhook, verify it was for a new "agent" tag for task-agent
+            if [[ "<< pipeline.trigger_source >>" = "webhook" ]]; then
+              # Halt the step if it wasn't triggered for a new "agent" image build on task-agent
+              if [[ ! "$IMAGE_TAG" = '"agent"' ]]; then
+                echo "Step halted because the image tag is not 'agent'."
+                circleci-agent step halt
+              fi
+            else
+              # We should never get here by automation, but just in case
+              echo "Step halted because the pipeline was not triggered by a webhook."
+              circleci-agent step halt
+            fi
       - run:
           name: Trigger Image Rebuild
           command: |
@@ -40,4 +32,3 @@ jobs:
               --data '{"branch" : "main"}'
               --header 'content-type: application/json'
               --header "authorization: Basic $WEBHOOK_CCI_API_TOKEN"
-
