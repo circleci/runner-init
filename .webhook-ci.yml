@@ -28,7 +28,5 @@ jobs:
       - run:
           name: Trigger Image Rebuild
           command: |
-            curl -X POST "https://circleci.com/api/v2/project/runner-init/pipeline" \
-              --data '{"branch" : "main"}' \
-              --header 'content-type: application/json' \
-              --header "authorization: Basic $WEBHOOK_CCI_API_TOKEN"
+            curl -X POST "https://circleci.com/api/v2/project/github/circleci/runner-init/pipeline" \
+              --header "Circle-Token: $WEBHOOK_CCI_API_TOKEN"
