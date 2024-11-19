@@ -145,6 +145,7 @@ func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
 
 		uid, _ := strconv.Atoi(usr.Uid)
 		gid, _ := strconv.Atoi(usr.Gid)
+		//nolint:gosec // G115: we only support POSIX right now, so this won't overflow
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 	} else {
 		o11y.LogError(ctx, "failed to lookup user", err, o11y.Field("username", username))

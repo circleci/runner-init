@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#71](https://github.com/circleci/runner-init/pull/71) [INTERNAL] Bump `ex` to `v1.0.12715-ada3e6b` and Go to `1.23`, which also required a bump in `golangci-lint` to `1.62.0` and addressing new lint errors that came along with that.
 - [#54](https://github.com/circleci/runner-init/pull/54) [INTERNAL] Forward signals from the task orchestrator (PID 1) to the custom command.
 - [#48](https://github.com/circleci/runner-init/pull/48) [INTERNAL] Supplement task agent errors with stderr and an action to check logs.
 - [#43](https://github.com/circleci/runner-init/pull/43) [INTERNAL] Don't exit with an error if the orchestrator has been interrupted.
