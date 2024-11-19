@@ -5,6 +5,7 @@ set -eu -o pipefail
 reportDir="test-reports"
 GORELEASER_VERSION="v2.1.0"
 GOTESTSUM_VERSION="1.12.0"
+GOLANGCI_LINT_VERSION="1.62.0"
 
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
@@ -173,7 +174,7 @@ install-go-bin() {
 # shellcheck disable=SC2034
 help_install_devtools="Install tools that other tasks expect into ./bin"
 install-devtools() {
-    install-github-binary golangci golangci-lint '-' '.zip' 1.55.2
+    install-github-binary golangci golangci-lint '-' '.zip' "${GOLANGCI_LINT_VERSION}"
     install-github-binary gotestyourself gotestsum '_' '.tar.gz' "${GOTESTSUM_VERSION}"
 
     if [[ "${CI:-}" == "true" ]]; then

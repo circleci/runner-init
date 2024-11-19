@@ -173,7 +173,7 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 
 func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Context) error) {
 	return "orchestrator",
-		func(ctx context.Context) error {
+		func(_ context.Context) error {
 			if !o.ready.Load() {
 				return fmt.Errorf("not ready")
 			}
