@@ -64,9 +64,12 @@ jobs:
     executor: go
     steps:
       - setup
-      - run:
-          name: Lint report
-          command: ./do lint-report
+      - with-go-cache:
+          golangci-lint: true
+          steps:
+            - run:
+                name: Lint report
+                command: ./do lint-report
       - run:
           name: Check `go mod tidy`
           command: |
@@ -98,7 +101,9 @@ jobs:
     executor: go
     steps:
       - setup
-      - run: ./do test ./... -count 3
+      - with-go-cache:
+          steps:
+            - run: ./do test ./... -count 3
       - notify_failing_main
 
   build:
@@ -106,11 +111,13 @@ jobs:
     steps:
       - goreleaser_setup
       - run: go mod download
-      - run:
-          name: Build binaries
-          command: |
-            BUILD_VERSION="$(<version.txt)-<< pipeline.number >>-$(git rev-parse --short HEAD 2>/dev/null || echo latest)" \
-              ./do build
+      - with-go-cache:
+          steps:
+            - run:
+                name: Build binaries
+                command: |
+                  BUILD_VERSION="$(<version.txt)-<< pipeline.number >>-$(git rev-parse --short HEAD 2>/dev/null || echo latest)" \
+                    ./do build
       - persist_to_workspace:
           root: .
           paths: [ target ]
@@ -354,3 +361,42 @@ commands:
 
                   curl --fail -H 'Content-type: application/json' \
                       --data @/tmp/slack-webhook-body "${SLACK_WEBHOOK}"
+
+  with-go-cache:
+    parameters:
+      steps:
+        type: steps
+      go-build:
+        type: boolean
+        default: true
+      golangci-lint:
+        type: boolean
+        default: false
+    steps:
+      - when:
+          condition: << parameters.golangci-lint >>
+          steps:
+            - restore_cache:
+                keys:
+                  - v1-golangci-lint-{{ .Environment.CIRCLE_JOB }}-{{ checksum "go.sum" }}-{{ epoch | round "72h" }}
+      - when:
+          condition: << parameters.go-build >>
+          steps:
+            - restore_cache:
+                keys:
+                  - v1-go-build-{{ .Environment.CIRCLE_JOB }}-{{ checksum "go.sum" }}-{{ epoch | round "72h" }}
+      - steps: << parameters.steps >>
+      - when:
+          condition: << parameters.golangci-lint >>
+          steps:
+            - save_cache:
+                key: v1-golangci-lint-{{ .Environment.CIRCLE_JOB }}-{{ checksum "go.sum" }}-{{ epoch | round "72h" }}
+                paths:
+                  - /home/circleci/.cache/golangci-lint
+      - when:
+          condition: << parameters.go-build >>
+          steps:
+            - save_cache:
+                key: v1-go-build-{{ .Environment.CIRCLE_JOB }}-{{ checksum "go.sum" }}-{{ epoch | round "72h" }}
+                paths:
+                  - /home/circleci/.cache/go-build
