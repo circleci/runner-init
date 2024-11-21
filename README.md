@@ -42,8 +42,8 @@ The `runner-init` project includes several key directories:
 
 ### Testing Strategies
 
-### Unit Tests
-Unit tests in the project are located in files suffixed with `_test.go` and focus on testing modules or specific functions. These tests often cover broader functionalities than traditional unit tests, as seen in `./task/orchestrator_test.go`.
+### Unit and Integration Tests
+Unit tests in the project are located in files suffixed with `_test.go` and focus on testing modules or specific functions. These tests often cover broader functionalities than traditional unit tests and are more akin to integration tests, as seen in `./task/orchestrator_test.go`. Here we use a fake runner API that involves spinning up an actual HTTP server to test the calls the orchestrator makes, rather than using an interface and stubbing out the responses.
 ### Acceptance Tests
 Located under `./acceptance`, these tests validate slices of system functionality using the compiled binary. They simulate the runner API and task agent using fakes found under `./internal/testing`. Acceptance tests are lighter weight compared to the smoke tests and have the advantage of testing both typical and unhappy paths due to the utilization of fakes.
 ### Smoke Tests
