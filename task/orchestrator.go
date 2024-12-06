@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
 	"github.com/circleci/ex/o11y"
+	"github.com/fsnotify/fsnotify"
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/task/cmd"
@@ -58,6 +61,13 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 	// Signal the orchestrator is ready and will start the task agent process
 	o.ready.Store(true)
 
+	if len(o.config.ReadinessFilePath) > 0 {
+		// Wait for readiness from the other containers before starting the task agent process
+		if err := o.waitForReadiness(ctx); err != nil {
+			return err
+		}
+	}
+
 	errCh := make(chan error, 1)
 	go func() {
 		// Start process reaping once the task agent process has completed
@@ -91,6 +101,44 @@ func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
 	// but still make sure any task resources are released.
 	ctx, o.cancelTask = context.WithCancel(o11y.WithProvider(context.Background(), o11y.FromContext(ctx)))
 	return ctx
+}
+
+func (o *Orchestrator) waitForReadiness(ctx context.Context) error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = watcher.Close()
+	}()
+
+	readinessFilePath := o.config.ReadinessFilePath
+	if err := watcher.Add(filepath.Dir(readinessFilePath)); err != nil {
+		return err
+	}
+
+	// Check if the readiness file already exists
+	if _, err := os.Stat(readinessFilePath); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	// Otherwise, wait for it to be created
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if ok && event.Has(fsnotify.Create) && event.Name == readinessFilePath {
+				return nil
+			}
+		case err, ok := <-watcher.Errors:
+			if ok && err != nil {
+				return err
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 func (o *Orchestrator) executeEntrypoint(ctx context.Context) error {
