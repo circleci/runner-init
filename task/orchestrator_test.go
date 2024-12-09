@@ -118,6 +118,20 @@ func TestOrchestrator(t *testing.T) {
 			},
 		},
 		{
+			name: "wait for service containers",
+			config: func() Config {
+				readinessFilePath := t.TempDir() + "/ready"
+				go func() {
+					_, _ = os.Create(readinessFilePath) //nolint:gosec
+				}()
+
+				c := defaultConfig
+				c.ReadinessFilePath = readinessFilePath
+				return c
+			}(),
+			wantError: "",
+		},
+		{
 			name:   "error: interrupted task",
 			config: defaultConfig,
 			env: map[string]string{

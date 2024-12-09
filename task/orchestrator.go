@@ -103,7 +103,13 @@ func (o *Orchestrator) taskContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (o *Orchestrator) waitForReadiness(ctx context.Context) error {
+func (o *Orchestrator) waitForReadiness(ctx context.Context) (err error) {
+	ctx, span := o11y.StartSpan(ctx, "orchestrator: wait-for-readiness")
+	defer func() {
+		span.AddField("ready", err == nil)
+		o11y.End(span, &err)
+	}()
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
