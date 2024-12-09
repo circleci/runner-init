@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -115,6 +116,20 @@ func TestOrchestrator(t *testing.T) {
 					assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
 				},
 			},
+		},
+		{
+			name: "wait for service containers",
+			config: func() Config {
+				readinessFilePath := t.TempDir() + "/ready"
+				go func() {
+					_, _ = os.Create(readinessFilePath) //nolint:gosec
+				}()
+
+				c := defaultConfig
+				c.ReadinessFilePath = readinessFilePath
+				return c
+			}(),
+			wantError: "",
 		},
 		{
 			name:   "error: interrupted task",
@@ -268,6 +283,39 @@ func TestOrchestrator(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOrchestrator_waitForReadiness(t *testing.T) {
+	t.Run("readiness file already present", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(testcontext.Background(), 1*time.Second)
+		defer cancel()
+
+		o := Orchestrator{}
+		o.config.ReadinessFilePath = filepath.Join(t.TempDir(), "ready")
+
+		_, err := os.Create(o.config.ReadinessFilePath)
+		assert.NilError(t, err)
+
+		err = o.waitForReadiness(ctx)
+		assert.NilError(t, err)
+	})
+
+	t.Run("readiness file created later", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(testcontext.Background(), 2*time.Second)
+		defer cancel()
+
+		o := Orchestrator{}
+		o.config.ReadinessFilePath = filepath.Join(t.TempDir(), "ready")
+
+		go func() {
+			time.Sleep(250 * time.Millisecond)
+			_, err := os.Create(o.config.ReadinessFilePath)
+			assert.NilError(t, err)
+		}()
+
+		err := o.waitForReadiness(ctx)
+		assert.NilError(t, err)
+	})
 }
 
 func beFakeTaskAgent(t *testing.T) {
