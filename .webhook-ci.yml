@@ -1,8 +1,13 @@
 version: 2.1
+
+orbs:
+  slack: circleci/slack@5.1.1
+
 workflows:
   webhook:
     jobs:
       - trigger-workflow
+
 jobs:
   trigger-workflow:
     docker:
@@ -29,4 +34,16 @@ jobs:
           name: Trigger Image Rebuild
           command: |
             curl -X POST "https://circleci.com/api/v2/project/github/circleci/runner-init/pipeline" \
-              --header "Circle-Token: $WEBHOOK_CCI_API_TOKEN"
+              --header "Circle-Token: $WEBHOOK_CCI_API_TOKEN" \
+              --header "Content-Type: application/json" \
+              -data '{"parameters": {"triggered_by_webhook": true}}'
+      - notify_failing_main
+
+commands:
+  notify_failing_main:
+    steps:
+      - slack/notify:
+          channel: runner-alerts
+          branch_pattern: main
+          event: fail
+          template: basic_fail_1

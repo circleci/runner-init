@@ -5,6 +5,10 @@ parameters:
     description: "Whether to trigger the `nightly` workflow."
     type: boolean
     default: false
+  triggered_by_webhook:
+    description: "Whether this pipeline was triggered by an incoming Docker Hub webhook"
+    type: boolean
+    default: false
 
 orbs:
   slack: circleci/slack@5.1.1
@@ -130,9 +134,21 @@ jobs:
           at: /tmp/workspace
       - goreleaser_setup
       - docker_login
-      - notify_slack:
-          header: ":goat: Release triggered"
-          version: "$(<version.txt)"
+      - when:
+          condition:
+            not:
+              equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
+          steps:
+            - notify_slack:
+                header: ":goat: Release triggered"
+                version: "$(<version.txt)"
+      - when:
+          condition:
+            equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
+          steps:
+            - notify_slack:
+                header: ":goat: Webhook trigger: Images rebuilt and published"
+                version: "$(<version.txt)"
       - run:
           name: Install Cosign binary
           command: |
