@@ -50,10 +50,9 @@ func main() {
 	var goModFile string
 	goModFile, ok := os.LookupEnv("SNYK_GO_MOD_FILE")
 	if !ok {
-		log.Fatal("SNYK_GO_MOD_FILE is unset")
+		goModFile = "go.mod"
 	}
 
-	// Fetching token and snyk org id
 	sk.SnykToken, ok = os.LookupEnv("SNYK_TOKEN")
 	if !ok {
 		log.Fatal("SNYK_TOKEN environment variable not set")
@@ -61,12 +60,14 @@ func main() {
 
 	sk.SnykOrgId, ok = os.LookupEnv("SNYK_ORGANIZATION")
 	if !ok {
-		log.Fatal("SNYK_ORGANIZATION environment variable not set")
+		// the CircleCI Snyk Org ID
+		sk.SnykOrgId = "844e0371-ef50-48c1-a0d1-1dbd652b2982"
 	}
 
 	var projectId string
 	projectId, ok = os.LookupEnv("SNYK_PROJECT_ID")
 	if !ok {
+		// the runner-init project ID
 		projectId = "fe17322a-c8ab-442d-96cb-1658da1cd57b"
 	}
 

@@ -24,6 +24,18 @@ build() {
     echo "${BUILD_VERSION:-dev}" | tee ./target/version.txt
 }
 
+help_attribute="Populate the license attribution file"
+attribute() {
+   # to get around the hard fail for unbound variables
+   TOKEN=${SNYK_TOKEN:-}
+   if [[ -z "${TOKEN}" ]]; then
+      echo "Set \$SNYK_TOKEN with API token from https://app.snyk.io/account"
+      exit 1
+   fi
+   echo "updating snyk-project-licenses.json with current direct dependency licenses"
+   go run .circleci/oss-scan.go
+}
+
 # This variable is used, but shellcheck can't tell.
 # shellcheck disable=SC2034
 help_images="Build and push the Docker images and manifests."
