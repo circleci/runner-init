@@ -147,7 +147,7 @@ jobs:
             equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
           steps:
             - notify_slack:
-                header: ":goat: Webhook trigger: Images rebuilt and published"
+                header: ":goat: :webhooks: Webhook trigger: Images rebuilt and published"
                 version: "$(<version.txt)"
       - run:
           name: Install Cosign binary

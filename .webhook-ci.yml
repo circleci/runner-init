@@ -36,7 +36,7 @@ jobs:
             curl -X POST "https://circleci.com/api/v2/project/github/circleci/runner-init/pipeline" \
               --header "Circle-Token: $WEBHOOK_CCI_API_TOKEN" \
               --header "Content-Type: application/json" \
-              -data '{"parameters": {"triggered_by_webhook": true}}'
+              --data '{"parameters": {"triggered_by_webhook": true}}'
       - notify_failing_main
 
 commands:
