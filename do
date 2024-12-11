@@ -24,8 +24,8 @@ build() {
     echo "${BUILD_VERSION:-dev}" | tee ./target/version.txt
 }
 
-help_attribute="Populate the license attribution file"
-attribute() {
+help_oss_acknowledge="Populate the license attribution file"
+oss_acknowledge() {
    # to get around the hard fail for unbound variables
    TOKEN=${SNYK_TOKEN:-}
    if [[ -z "${TOKEN}" ]]; then

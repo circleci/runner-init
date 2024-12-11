@@ -47,7 +47,7 @@ workflows:
       - vuln-scanner/vuln_scan:
           context: [ security-scanning, dockerhub-readonly, github-readonly ]
           upload_on_merge: true
-      - oss-attribute:
+      - oss-acknowledgement-check:
           requires: [ build ]
           context: [ org-global ]
       - images:
@@ -203,7 +203,7 @@ jobs:
           paths:
             - environment
 
-  oss-attribute:
+  oss-acknowledgement-check:
     environment:
       SNYK_LICENSE_RESULT_FILE: "scan_results.json"
       SNYK_GO_MOD_FILE: "go.mod"
@@ -218,9 +218,9 @@ jobs:
           command: |
             diff <( cat "$SNYK_LICENSE_RESULT_FILE" | jq --sort-keys ) <( cat snyk-project-licenses.json | jq --sort-keys )
             if [[ ! "$?" -eq "0" ]];then
-              echo "Open source attributions need to be updated."
-              echo "See `./do attribute` for generating new acknowledgements"
-              echo "See [CONFLUENCE PAGE LINK] for updating public documentation"
+              echo "Open source acknowledgements need to be updated."
+              echo "1) See `./do oss_acknowledge` for generating new acknowledgements"
+              echo "2) Update the Open Source acknowledgments documentation for runner-init at: https://github.com/circleci/circleci-docs/blob/master/jekyll/_cci2/open-source.adoc"
               exit 1
             fi
 
