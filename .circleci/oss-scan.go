@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,7 +63,7 @@ func main() {
 			helpText.WriteString("			SNYK_PROJECT_ID: The Snyk Project ID for the project to scan\n")
 			helpText.WriteString("				Defult: The runner-init Project ID\n")
 			helpText.WriteString("			SNYK_LICENSE_RESULT_FILE: The name of the file to write the license scan results to\n")
-			helpText.WriteString("				Defult: \"snyk-project-licences.json\"\n")
+			helpText.WriteString("				Defult: \"snyk-project-licences.csv\"\n")
 			fmt.Print(helpText.String())
 			return
 		}
@@ -90,6 +91,12 @@ func main() {
 	if !ok {
 		// the runner-init project ID
 		projectId = "fe17322a-c8ab-442d-96cb-1658da1cd57b"
+	}
+
+	var fileName string
+	fileName, ok = os.LookupEnv("SNYK_LICENSE_RESULT_FILE")
+	if !ok {
+		fileName = "snyk-project-licenses.csv"
 	}
 
 	req, err := json.Marshal(SnykRequest{
@@ -121,35 +128,37 @@ func main() {
 		log.Fatal(err)
 	}
 
-	licenseMap, err := parseDirectDependencies(snykResponse, goModFile)
+	licenseRows, err := parseDirectDependencies(snykResponse, goModFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	licenses, err := json.Marshal(struct {
-		Licenses map[string][]string `json:"licenses"`
-	}{Licenses: licenseMap})
+	outFile, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer outFile.Close()
 
-	var fileName string
-	fileName, ok = os.LookupEnv("SNYK_LICENSE_RESULT_FILE")
-	if !ok {
-		fileName = "snyk-project-licenses.json"
+	w := csv.NewWriter(outFile)
+	w.Write([]string{"Name", "License"})
+	for _, row := range licenseRows {
+		if err := w.Write(row); err != nil {
+			log.Fatal(err)
+		}
 	}
-	err = os.WriteFile(fileName, licenses, 0644)
-	if err != nil {
-		fmt.Printf("error writing snyk response: %v", err)
-		return
+
+	w.Flush()
+	if err := w.Error(); err != nil {
+		log.Fatal(err)
 	}
+
 }
 
-func parseDirectDependencies(depList SnykResponse, goModFile string) (map[string][]string, error) {
-	licenseMap := map[string][]string{}
+func parseDirectDependencies(depList SnykResponse, goModFile string) ([][]string, error) {
+	licenses := []string{}
 	goDepsFile, err := os.Open(goModFile)
 	if err != nil {
-		return licenseMap, err
+		return [][]string{}, err
 	}
 	defer goDepsFile.Close()
 
@@ -165,19 +174,24 @@ func parseDirectDependencies(depList SnykResponse, goModFile string) (map[string
 		}
 	}
 	for _, r := range depList.Results {
-		licenseMap[r.ID] = []string{}
 		for _, d := range r.Dependencies {
 			for _, v := range directDeps {
 				if strings.HasPrefix(d.Name, v) {
-					if !slices.Contains(licenseMap[r.ID], v) {
-						licenseMap[r.ID] = append(licenseMap[r.ID], v)
+					entry := fmt.Sprintf("%s::%s", v, r.ID)
+					if !slices.Contains(licenses, entry) {
+						licenses = append(licenses, entry)
 					}
 				}
 			}
 		}
 	}
+	licenseRows := [][]string{}
+	for _, l := range licenses {
+		licenseRow := strings.Split(l, "::")
+		licenseRows = append(licenseRows, licenseRow)
+	}
 
-	return licenseMap, nil
+	return licenseRows, nil
 }
 
 func (sn *SnykAPI) callSnykAPI(method string, url string, body []byte) (*http.Response, error) {

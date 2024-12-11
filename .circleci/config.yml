@@ -205,8 +205,7 @@ jobs:
 
   oss-acknowledgement-check:
     environment:
-      SNYK_LICENSE_RESULT_FILE: "scan_results.json"
-      SNYK_GO_MOD_FILE: "go.mod"
+      SNYK_LICENSE_RESULT_FILE: "scan_results.csv"
     executor: go
     steps:
       - checkout
@@ -216,14 +215,13 @@ jobs:
       - run:
           name: "Compare to Existing Licenses"
           command: |
-            diff <( cat "$SNYK_LICENSE_RESULT_FILE" | jq --sort-keys ) <( cat snyk-project-licenses.json | jq --sort-keys )
+            diff <( cat "$SNYK_LICENSE_RESULT_FILE" | sort ) <( cat snyk-project-licenses.csv | sort )
             if [[ ! "$?" -eq "0" ]];then
-              echo "Open source acknowledgements need to be updated."
-              echo "1) See `./do oss_acknowledge` for generating new acknowledgements"
-              echo "2) Update the Open Source acknowledgments documentation for runner-init at: https://github.com/circleci/circleci-docs/blob/master/jekyll/_cci2/open-source.adoc"
+              echo "Open source acknowledgments need to be updated."
+              echo "1) See `./do oss_acknowledgment` for generating new acknowledgements"
+              echo "2) Update the Open Source Acknowledgments documentation for runner-init at: https://github.com/circleci/circleci-docs/blob/master/jekyll/_cci2/runner-init.csv using the generated CSV file"
               exit 1
             fi
-
 
   scan:
     executor: ccc

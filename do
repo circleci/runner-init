@@ -32,7 +32,7 @@ oss_acknowledge() {
       echo "Set \$SNYK_TOKEN with API token from https://app.snyk.io/account"
       exit 1
    fi
-   echo "updating snyk-project-licenses.json with current direct dependency licenses"
+   echo "updating snyk-project-licenses.csv with current direct dependency licenses"
    go run .circleci/oss-scan.go
 }
 
