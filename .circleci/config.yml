@@ -100,7 +100,8 @@ jobs:
                 ':*.go' \
                 ':*Dockerfile' \
                 ':!*_test.go' \
-                ':!*internal/*'
+                ':!*internal/*' \
+                ':!.circleci/*.go'
             fi
       - run:
           name: Try running `./do lint --fix` if this fails
