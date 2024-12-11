@@ -240,15 +240,17 @@ jobs:
       - checkout
       - attach_workspace:
           at: /tmp/workspace
-      - run:
-          name: "Run the runner smoke tests in the `circleci/runner-smoke-tests` repo"
-          command: |
-            source /tmp/workspace/environment || true
+      - with-go-cache:
+          steps:
+            - run:
+                name: "Run the runner smoke tests in the `circleci/runner-smoke-tests` repo"
+                command: |
+                  source /tmp/workspace/environment || true
 
-            SMOKE_TESTS_VERSION="experimental" \
-              SMOKE_TESTS_KUBERNETES_RUNNER_INIT_TAG="agent${IMAGE_TAG_SUFFIX:-""}" \
-              SMOKE_TESTS_MACHINE_SKIP=true \
-              ./do smoke-tests
+                  SMOKE_TESTS_VERSION="experimental" \
+                    SMOKE_TESTS_KUBERNETES_RUNNER_INIT_TAG="agent${IMAGE_TAG_SUFFIX:-""}" \
+                    SMOKE_TESTS_MACHINE_SKIP=true \
+                    ./do smoke-tests
       - notify_failing_main
 
 commands:
