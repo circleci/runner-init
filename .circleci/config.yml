@@ -45,8 +45,11 @@ workflows:
           context: [ org-global ]
           requires: [ build ]
       - vuln-scanner/vuln_scan:
-          context: [security-scanning, dockerhub-readonly, github-readonly]
+          context: [ security-scanning, dockerhub-readonly, github-readonly ]
           upload_on_merge: true
+      - oss-attribute:
+          requires: [ build ]
+          context: [ org-global ]
       - images:
           context: [ org-global, runner-image-signing ]
           requires: [ lint, test, build, scan, vuln-scanner/vuln_scan ]
@@ -199,6 +202,28 @@ jobs:
           root: /tmp/workspace
           paths:
             - environment
+
+  oss-attribute:
+    environment:
+      SNYK_LICENSE_RESULT_FILE: "scan_results.json"
+      SNYK_GO_MOD_FILE: "go.mod"
+    executor: go
+    steps:
+      - checkout
+      - run: 
+          name: "Check Current Direct Dependency Licenses"
+          command: go run .circleci/oss-scan.go
+      - run:
+          name: "Compare to Existing Licenses"
+          command: |
+            diff <( cat "$SNYK_LICENSE_RESULT_FILE" | jq --sort-keys ) <( cat snyk-project-licenses.json | jq --sort-keys )
+            if [[ ! "$?" -eq "0" ]];then
+              echo "Open source attributions need to be updated."
+              echo "See `./do attribute` for generating new acknowledgements"
+              echo "See [CONFLUENCE PAGE LINK] for updating public documentation"
+              exit 1
+            fi
+
 
   scan:
     executor: ccc
