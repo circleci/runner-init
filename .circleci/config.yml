@@ -50,6 +50,7 @@ workflows:
       - oss-acknowledgement-check:
           requires: [ build ]
           context: [ org-global ]
+          requires: [vuln-scanner/vuln_scan]
       - images:
           context: [ org-global, runner-image-signing ]
           requires: [ lint, test, build, scan, vuln-scanner/vuln_scan ]
@@ -222,10 +223,13 @@ jobs:
               echo "2) Update the Open Source Acknowledgments documentation for runner-init at: https://github.com/circleci/circleci-docs/blob/master/jekyll/_cci2/runner-init.csv using the generated CSV file"
               exit 1
             fi
-
+            cat $SNYK_LICENSE_RESULT_FILE
+  
   scan:
     executor: ccc
     parallelism: 4
+    environment:
+      SYNK_DO_UPLOAD: true
     steps:
       - checkout
       - setup_remote_docker
@@ -245,7 +249,7 @@ jobs:
       - run:
           name: Scan selected Docker images
           command: |
-            while IFS=' ' read -r path arch; do
+            while IFS= ' ' read -r path arch; do
               echo "Scanning ${path} ${arch}"
               name=${path//\//_}-${arch}
               NAME=${name,,} \
@@ -260,6 +264,7 @@ jobs:
       - store_artifacts:
           path: ccc-image-scan-results
       - notify_failing_main
+      
 
   smoke-tests:
     executor: go
