@@ -12,6 +12,7 @@ parameters:
 
 orbs:
   slack: circleci/slack@5.1.1
+  vuln-scanner: cci-internal/snyk-vuln-scanner@0.9.1
 
 executors:
   go:
@@ -43,9 +44,12 @@ workflows:
       - scan:
           context: [ org-global ]
           requires: [ build ]
+      - vuln-scanner/vuln_scan:
+          context: [security-scanning, dockerhub-readonly, github-readonly]
+          upload_on_merge: true
       - images:
           context: [ org-global, runner-image-signing ]
-          requires: [ lint, test, build, scan ]
+          requires: [ lint, test, build, scan, vuln-scanner/vuln_scan ]
       - smoke-tests:
           context: [ org-global, runner-smoke-tests ]
           requires: [ images ]
