@@ -46,6 +46,27 @@ var (
 
 func main() {
 
+	if len(os.Args) > 1 {
+		helpText := strings.Builder{}
+		if os.Args[1] == "--help" || os.Args[1] == "-h" {
+			helpText.WriteString("OSS-Scan\n")
+			helpText.WriteString("	Generate OSS License dossier for direct project dependencies from Snyk\n")
+			helpText.WriteString("	Usage:\n")
+			helpText.WriteString("		go run ./oss-scan.go\n")
+			helpText.WriteString("	Configuration:\n")
+			helpText.WriteString("		Environment Variables:\n")
+			helpText.WriteString("			SNYK_TOKEN: A Snyk API token\n")
+			helpText.WriteString("				Default: \"go.mod\"\n")
+			helpText.WriteString("			SNYK_ORGANIZATION: The Snyk Organization ID the intended project belongs to\n")
+			helpText.WriteString("				Defult: The CircleCI Orgnaization ID\n")
+			helpText.WriteString("			SNYK_PROJECT_ID: The Snyk Project ID for the project to scan\n")
+			helpText.WriteString("				Defult: The runner-init Project ID\n")
+			helpText.WriteString("			SNYK_LICENSE_RESULT_FILE: The name of the file to write the license scan results to\n")
+			helpText.WriteString("				Defult: \"snyk-project-licences.json\"\n")
+			fmt.Print(helpText.String())
+			return
+		}
+	}
 	var sk SnykAPI
 	var goModFile string
 	goModFile, ok := os.LookupEnv("SNYK_GO_MOD_FILE")
