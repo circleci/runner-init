@@ -212,7 +212,7 @@ jobs:
       - checkout
       - run: 
           name: "Check Current Direct Dependency Licenses"
-          command: go run .circleci/oss-scan.go
+          command: ./do oss_acknowledge
       - run:
           name: "Compare to Existing Licenses"
           command: |

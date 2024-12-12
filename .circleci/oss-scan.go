@@ -89,8 +89,7 @@ func main() {
 	var projectId string
 	projectId, ok = os.LookupEnv("SNYK_PROJECT_ID")
 	if !ok {
-		// the runner-init project ID
-		projectId = "fe17322a-c8ab-442d-96cb-1658da1cd57b"
+		log.Fatal("SNYK_PROJECT_ID not set")
 	}
 
 	var fileName string
@@ -105,7 +104,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		fmt.Printf("error creating request body: %v", err)
+		log.Fatal(fmt.Sprintf("error creating request body: %v", err))
 		return
 	}
 

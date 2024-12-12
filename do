@@ -33,7 +33,7 @@ oss_acknowledge() {
       exit 1
    fi
    echo "updating snyk-project-licenses.csv with current direct dependency licenses"
-   go run .circleci/oss-scan.go
+   SNYK_PROJECT_ID="fe17322a-c8ab-442d-96cb-1658da1cd57b" go run .circleci/oss-scan.go
 }
 
 # This variable is used, but shellcheck can't tell.
