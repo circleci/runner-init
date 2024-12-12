@@ -48,7 +48,7 @@ workflows:
           context: [ security-scanning, dockerhub-readonly, github-readonly ]
           upload_on_merge: true
       - oss-acknowledgement-check:
-          requires: [ build, vuln-scanner/vuln_scan ]
+          requires: [ vuln-scanner/vuln_scan ]
           context: [ org-global ]
       - images:
           context: [ org-global, runner-image-signing ]
