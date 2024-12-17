@@ -8,7 +8,7 @@ require (
 	github.com/alecthomas/kong v1.6.0
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-gonic/gin v1.10.0
-	github.com/goccy/go-json v0.10.3
+	github.com/goccy/go-json v0.10.4
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-reap v0.0.0-20230117204525-bf69c61a7b71
 	gotest.tools/v3 v3.5.1
