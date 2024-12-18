@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -13,11 +14,11 @@ import (
 func TestInit(t *testing.T) {
 	srcDir := createMockSourceFiles(t)
 	destDir := t.TempDir()
-	orchSrc := srcDir + "/orchestrator"
-	orchDest := destDir + "/orchestrator"
-	agentSrc := srcDir + "/circleci-agent"
-	agentDest := destDir + "/circleci-agent"
-	circleciDest := destDir + "/circleci"
+	orchSrc := filepath.Join(srcDir, "orchestrator")
+	orchDest := filepath.Join(destDir, "orchestrator")
+	agentSrc := filepath.Join(srcDir, "circleci-agent")
+	agentDest := filepath.Join(destDir, "circleci-agent")
+	circleciDest := filepath.Join(destDir, "circleci")
 
 	r := runner.New(
 		"SOURCE="+srcDir,
@@ -53,10 +54,10 @@ func createMockSourceFiles(t *testing.T) string {
 
 	srcDir := t.TempDir()
 
-	err := os.WriteFile(srcDir+"/orchestrator", []byte("mock orchestrator data"), 0600)
+	err := os.WriteFile(filepath.Join(srcDir, "orchestrator"), []byte("mock orchestrator data"), 0600)
 	assert.NilError(t, err)
 
-	err = os.WriteFile(srcDir+"/circleci-agent", []byte("mock agent data"), 0600)
+	err = os.WriteFile(filepath.Join(srcDir, "circleci-agent"), []byte("mock agent data"), 0600)
 	assert.NilError(t, err)
 
 	return srcDir

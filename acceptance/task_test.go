@@ -3,6 +3,8 @@ package acceptance
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,18 +13,18 @@ import (
 )
 
 func TestRunTask(t *testing.T) {
-	readinessFilePath := t.TempDir() + "/ready"
+	readinessFilePath := filepath.Join(t.TempDir(), "ready")
 	goodConfig := fmt.Sprintf(`
 {
 	"cmd": [],
 	"enable_unsafe_retries": false,
 	"token": "testtoken",
-	"readiness_file_path": "%s",
+	"readiness_file_path": "%v",
 	"task_agent_path": "%v",
 	"runner_api_base_url": "https://runner.circleci.com",
 	"allocation": "testallocation",
 	"max_run_time": 60000000000
-}`, readinessFilePath, taskAgentBinary)
+}`, strings.ReplaceAll(readinessFilePath, `\`, `\\`), strings.ReplaceAll(taskAgentBinary, `\`, `\\`))
 
 	r := runner.New(
 		"CIRCLECI_GOAT_SHUTDOWN_DELAY=10s",
@@ -37,7 +39,8 @@ func TestRunTask(t *testing.T) {
 	})
 
 	go func() {
-		_, err := os.Create(readinessFilePath) //nolint:gosec
+		f, err := os.Create(readinessFilePath) //nolint:gosec
+		defer func() { assert.NilError(t, f.Close()) }()
 		assert.NilError(t, err)
 	}()
 
