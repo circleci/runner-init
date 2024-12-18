@@ -3,6 +3,7 @@ package acceptance
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -69,8 +70,16 @@ func runTests(m *testing.M) (int, error) {
 
 // A little hack to get around limitations of the test runner on positional arguments
 func createRunTaskScript() error {
-	script := "#!/bin/bash\nexec " + orchestratorTestBinary + " run-task"
-	scriptPath := binariesPath + "/orchestratorRunTask.sh"
+	var script string
+	var scriptPath string
+
+	if runtime.GOOS == "windows" {
+		script = "@echo off\n" + orchestratorTestBinary + " run-task"
+		scriptPath = filepath.Join(binariesPath, "orchestratorRunTask.bat")
+	} else {
+		script = "#!/bin/bash\nexec " + orchestratorTestBinary + " run-task"
+		scriptPath = filepath.Join(binariesPath, "orchestratorRunTask.sh")
+	}
 
 	if err := os.WriteFile(scriptPath, []byte(script), 0750); err != nil { //nolint:gosec
 		return err
