@@ -112,7 +112,7 @@ test() {
 
     mkdir -p "${reportDir}"
     # -count=1 is used to forcibly disable test result caching
-    ./bin/gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
+    CGO_ENABLED=1 ./bin/gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
 }
 
 # This variable is used, but shellcheck can't tell.
@@ -158,7 +158,7 @@ install-github-binary() {
         local unpack='unzip'
     fi
 
-    local tmp=$(mktemp -d ${TMPDIR:-/tmp/}do-install-github-binary.XXXXXX)
+    local tmp=$(mktemp -d -t do-install-github-binary.XXXXXX)
     trap "{ rm -rf $tmp; }" EXIT
 
     set -x
@@ -171,7 +171,7 @@ install-github-binary() {
     $unpack "$tmp/download"
     popd
 
-    local binary=$(find "$tmp" -name "$repo*" -type f)
+    local binary=$(/usr/bin/find "$tmp" -name "$repo*" -type f)
     chmod +x "$binary"
     mv "$binary" ./bin/
 }
