@@ -2,6 +2,8 @@ package init
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -11,11 +13,11 @@ import (
 func TestRun(t *testing.T) {
 	srcDir := createMockSourceFiles(t)
 	destDir := t.TempDir()
-	orchSrc := srcDir + "/orchestrator"
-	orchDest := destDir + "/orchestrator"
-	agentSrc := srcDir + "/circleci-agent"
-	agentDest := destDir + "/circleci-agent"
-	circleciDest := destDir + "/circleci"
+	orchSrc := filepath.Join(srcDir, "orchestrator")
+	orchDest := filepath.Join(destDir, "orchestrator")
+	agentSrc := filepath.Join(srcDir, "circleci-agent")
+	agentDest := filepath.Join(destDir, "circleci-agent")
+	circleciDest := filepath.Join(destDir, "circleci")
 
 	t.Run("Copy files and create symlink", func(t *testing.T) {
 		err := Run(srcDir, destDir)
@@ -31,7 +33,11 @@ func TestRun(t *testing.T) {
 
 	t.Run("Fail when source files not present", func(t *testing.T) {
 		err := Run(srcDir, "non-existent-dir")
-		assert.Check(t, cmp.ErrorContains(err, "no such file or directory"))
+		if runtime.GOOS == "windows" {
+			assert.Check(t, cmp.ErrorContains(err, "The system cannot find the path specified"))
+		} else {
+			assert.Check(t, cmp.ErrorContains(err, "no such file or directory"))
+		}
 	})
 }
 
@@ -41,10 +47,10 @@ func createMockSourceFiles(t *testing.T) string {
 
 	srcDir := t.TempDir()
 
-	err := os.WriteFile(srcDir+"/orchestrator", []byte("mock orchestrator data"), 0600)
+	err := os.WriteFile(filepath.Join(srcDir, "orchestrator"), []byte("mock orchestrator data"), 0600)
 	assert.NilError(t, err)
 
-	err = os.WriteFile(srcDir+"/circleci-agent", []byte("mock agent data"), 0600)
+	err = os.WriteFile(filepath.Join(srcDir, "circleci-agent"), []byte("mock agent data"), 0600)
 	assert.NilError(t, err)
 
 	return srcDir
