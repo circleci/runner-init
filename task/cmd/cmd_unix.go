@@ -1,3 +1,5 @@
+//go:build !windows
+
 package cmd
 
 import (
@@ -154,7 +156,7 @@ func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
 
 func notifySignals(cmd *exec.Cmd) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(ch, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		for sig := range ch {
