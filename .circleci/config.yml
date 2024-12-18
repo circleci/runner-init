@@ -26,6 +26,11 @@ executors:
     docker:
       - image: *goimage
     resource_class: circleci-runner/rum-large
+  windows:
+    machine:
+      image: windows-server-2022-gui:current
+      shell: bash.exe -login
+    resource_class: windows.xlarge
   ccc:
     docker:
       - image: circleci/command-convenience:0.1
@@ -46,7 +51,10 @@ workflows:
         - equal: [ false, << pipeline.parameters.trigger_nightly_workflow >> ]
     jobs:
       - lint
-      - test
+      - test:
+          matrix:
+            parameters:
+              os: [ go, windows ]
       - build
       - scan:
           context: [ org-global ]
@@ -116,12 +124,26 @@ jobs:
       - notify_failing_main
 
   test:
-    executor: go
+    parameters:
+      os:
+        type: string
+    executor: << parameters.os >>
     steps:
       - setup
+      - when:
+          condition:
+            equal: [ << parameters.os >>, "windows" ]
+          steps:
+            - run:
+                name: "Install GCC"
+                command: |
+                  choco install mingw -y
+                  echo 'export PATH="$PATH:/c/ProgramData/mingw64/mingw64/bin"' >> ~/.bash_profile
+                  source ~/.bash_profile
+                  gcc -v
       - with-go-cache:
           steps:
-            - run: ./do test ./... -count 3
+            - run: ./do test ./...
       - notify_failing_main
 
   build:

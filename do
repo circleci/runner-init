@@ -92,7 +92,7 @@ help_test="Run the tests"
 test() {
     mkdir -p "${reportDir}"
     # -count=1 is used to forcibly disable test result caching
-    go tool gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
+    CGO_ENABLED=1 go tool gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
 }
 
 # This variable is used, but shellcheck can't tell.
