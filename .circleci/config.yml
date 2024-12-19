@@ -30,7 +30,7 @@ executors:
     machine:
       image: windows-server-2022-gui:current
       shell: bash.exe -login
-    resource_class: windows.xlarge
+    resource_class: windows.medium
   ccc:
     docker:
       - image: circleci/command-convenience:0.1
@@ -66,7 +66,7 @@ workflows:
           context: [ org-global ]
       - images:
           context: [ org-global, runner-image-signing ]
-          requires: [ lint, test, build, scan, vuln-scanner/vuln_scan ]
+          requires: [ lint, build, scan, vuln-scanner/vuln_scan ]
       - smoke-tests:
           context: [ org-global, runner-smoke-tests ]
           requires: [ images ]
