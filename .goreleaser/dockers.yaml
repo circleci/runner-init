@@ -48,6 +48,7 @@ docker_manifests:
     image_templates:
       - "circleci/runner-init:agent-amd64{{.Env.IMAGE_TAG_SUFFIX}}"
       - "circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"
+      - "circleci/runner-init:agent-windows{{.Env.IMAGE_TAG_SUFFIX}}"
     skip_push: "{{.Env.SKIP_PUSH}}"
 
   - name_template: "circleci/runner-init:test-agent"
