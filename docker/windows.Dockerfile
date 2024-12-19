@@ -13,4 +13,6 @@ FROM mcr.microsoft.com/windows/nanoserver:ltsc2025
 
 COPY --from=builder / /
 
-ENTRYPOINT ["c:\\orchestrator.exe", "init"]
+WORKDIR /
+
+ENTRYPOINT ["orchestrator.exe", "init"]
