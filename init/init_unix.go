@@ -1,3 +1,5 @@
+//go:build !windows
+
 package init
 
 import (
@@ -5,6 +7,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+)
+
+const (
+	binOrchestrator  = "orchestrator"
+	binCircleciAgent = "circleci-agent"
+	binCircleci      = "circleci"
 )
 
 // Run function performs the copying of specific files and symlink creation
