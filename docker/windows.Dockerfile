@@ -9,7 +9,7 @@ ARG TARGETPLATFORM
 COPY --from=task-agent-image /opt/circleci/${TARGETPLATFORM}/circleci-agent /circleci-agent.exe
 COPY ./target/bin/${TARGETPLATFORM}/orchestrator.exe /
 
-FROM mcr.microsoft.com/windows/nanoserver:ltsc2025
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2019
 
 COPY --from=builder / /
 
