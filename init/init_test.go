@@ -13,11 +13,11 @@ import (
 func TestRun(t *testing.T) {
 	srcDir := createMockSourceFiles(t)
 	destDir := t.TempDir()
-	orchSrc := filepath.Join(srcDir, "orchestrator")
-	orchDest := filepath.Join(destDir, "orchestrator")
-	agentSrc := filepath.Join(srcDir, "circleci-agent")
-	agentDest := filepath.Join(destDir, "circleci-agent")
-	circleciDest := filepath.Join(destDir, "circleci")
+	orchSrc := filepath.Join(srcDir, binOrchestrator)
+	orchDest := filepath.Join(destDir, binOrchestrator)
+	agentSrc := filepath.Join(srcDir, binCircleciAgent)
+	agentDest := filepath.Join(destDir, binCircleciAgent)
+	circleciDest := filepath.Join(destDir, binCircleci)
 
 	t.Run("Copy files and create symlink", func(t *testing.T) {
 		err := Run(srcDir, destDir)
@@ -47,10 +47,10 @@ func createMockSourceFiles(t *testing.T) string {
 
 	srcDir := t.TempDir()
 
-	err := os.WriteFile(filepath.Join(srcDir, "orchestrator"), []byte("mock orchestrator data"), 0600)
+	err := os.WriteFile(filepath.Join(srcDir, binOrchestrator), []byte("mock orchestrator data"), 0600)
 	assert.NilError(t, err)
 
-	err = os.WriteFile(filepath.Join(srcDir, "circleci-agent"), []byte("mock agent data"), 0600)
+	err = os.WriteFile(filepath.Join(srcDir, binCircleciAgent), []byte("mock agent data"), 0600)
 	assert.NilError(t, err)
 
 	return srcDir
