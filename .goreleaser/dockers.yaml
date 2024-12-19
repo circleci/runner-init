@@ -16,10 +16,9 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
       - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
     extra_files:
-      - ./target/bin/amd64/orchestrator
+      - ./target/bin/linux/amd64/orchestrator
 
   - id: init-arm64
     image_templates: ["circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"]
@@ -28,10 +27,24 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
       - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
     extra_files:
-      - ./target/bin/arm64/orchestrator
+      - ./target/bin/linux/arm64/orchestrator
+
+  - id: init-windows
+    image_templates: ["circleci/runner-init:agent-windows{{.Env.IMAGE_TAG_SUFFIX}}"]
+    dockerfile: ./docker/windows.Dockerfile
+    skip_push: "true" # we push during the build step since we cannot load a Windows image on Linux
+    use: buildx
+    build_flag_templates:
+      - "--builder=circleci-runner-init-windows-builder"
+      - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
+      - "--platform=windows/amd64"
+      - "--load=false"
+      - "--push={{.Env.PUSH_WINDOWS}}"
+      - "--provenance=false"
+    extra_files:
+      - ./target/bin/windows/amd64/orchestrator.exe
 
   - id: testinit-amd64
     image_templates: ["circleci/runner-init:test-agent-amd64"]
@@ -40,10 +53,9 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
     extra_files:
-      - ./target/bin/amd64/orchestrator
-      - ./target/bin/amd64/fake-task-agent
+      - ./target/bin/linux/amd64/orchestrator
+      - ./target/bin/linux/amd64/fake-task-agent
 
   - id: testinit-arm64
     image_templates: ["circleci/runner-init:test-agent-arm64"]
@@ -52,16 +64,16 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
     extra_files:
-      - ./target/bin/arm64/orchestrator
-      - ./target/bin/arm64/fake-task-agent
+      - ./target/bin/linux/arm64/orchestrator
+      - ./target/bin/linux/arm64/fake-task-agent
 
 docker_manifests:
   - name_template: "circleci/runner-init:agent{{.Env.IMAGE_TAG_SUFFIX}}"
     image_templates:
       - "circleci/runner-init:agent-amd64{{.Env.IMAGE_TAG_SUFFIX}}"
       - "circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"
+      - "circleci/runner-init:agent-windows{{.Env.IMAGE_TAG_SUFFIX}}"
     skip_push: "{{.Env.SKIP_PUSH}}"
 
   - name_template: "circleci/runner-init:test-agent"
