@@ -43,9 +43,13 @@ func TestInit(t *testing.T) {
 		assertFileIsCopied(t, orchSrc, orchDest)
 		assertFileIsCopied(t, agentSrc, agentDest)
 
-		agentLink, err := os.Readlink(circleciDest)
-		assert.NilError(t, err)
-		assert.Check(t, cmp.DeepEqual(agentLink, agentDest))
+		if runtime.GOOS == "windows" {
+			assertFileIsCopied(t, agentSrc, circleciDest)
+		} else {
+			agentLink, err := os.Readlink(circleciDest)
+			assert.NilError(t, err)
+			assert.Check(t, cmp.DeepEqual(agentLink, agentDest))
+		}
 	})
 }
 
