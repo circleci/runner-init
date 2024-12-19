@@ -26,9 +26,13 @@ func TestRun(t *testing.T) {
 		assertFileIsCopied(t, orchSrc, orchDest)
 		assertFileIsCopied(t, agentSrc, agentDest)
 
-		agentLink, errLink := os.Readlink(circleciDest)
-		assert.NilError(t, errLink)
-		assert.Check(t, cmp.DeepEqual(agentLink, agentDest))
+		if runtime.GOOS == "windows" {
+			assertFileIsCopied(t, agentSrc, circleciDest)
+		} else {
+			agentLink, errLink := os.Readlink(circleciDest)
+			assert.NilError(t, errLink)
+			assert.Check(t, cmp.DeepEqual(agentLink, agentDest))
+		}
 	})
 
 	t.Run("Fail when source files not present", func(t *testing.T) {
