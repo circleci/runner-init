@@ -3,6 +3,7 @@ package acceptance
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -14,11 +15,11 @@ import (
 func TestInit(t *testing.T) {
 	srcDir := createMockSourceFiles(t)
 	destDir := t.TempDir()
-	orchSrc := filepath.Join(srcDir, "orchestrator")
-	orchDest := filepath.Join(destDir, "orchestrator")
-	agentSrc := filepath.Join(srcDir, "circleci-agent")
-	agentDest := filepath.Join(destDir, "circleci-agent")
-	circleciDest := filepath.Join(destDir, "circleci")
+	orchSrc := path(t, srcDir, "orchestrator")
+	orchDest := path(t, destDir, "orchestrator")
+	agentSrc := path(t, srcDir, "circleci-agent")
+	agentDest := path(t, destDir, "circleci-agent")
+	circleciDest := path(t, destDir, "circleci")
 
 	r := runner.New(
 		"SOURCE="+srcDir,
@@ -54,10 +55,10 @@ func createMockSourceFiles(t *testing.T) string {
 
 	srcDir := t.TempDir()
 
-	err := os.WriteFile(filepath.Join(srcDir, "orchestrator"), []byte("mock orchestrator data"), 0600)
+	err := os.WriteFile(path(t, srcDir, "orchestrator"), []byte("mock orchestrator data"), 0600)
 	assert.NilError(t, err)
 
-	err = os.WriteFile(filepath.Join(srcDir, "circleci-agent"), []byte("mock agent data"), 0600)
+	err = os.WriteFile(path(t, srcDir, "circleci-agent"), []byte("mock agent data"), 0600)
 	assert.NilError(t, err)
 
 	return srcDir
@@ -77,4 +78,15 @@ func assertFileIsCopied(t *testing.T, src, dest string) {
 	destContents, err := os.ReadFile(dest) //#nosec:G304 // this is trusted input
 	assert.NilError(t, err)
 	assert.Check(t, cmp.DeepEqual(srcContents, destContents), "files should have same contents")
+}
+
+func path(t *testing.T, a, b string) string {
+	t.Helper()
+
+	p := filepath.Join(a, b)
+
+	if runtime.GOOS == "windows" {
+		return p + ".exe"
+	}
+	return p
 }

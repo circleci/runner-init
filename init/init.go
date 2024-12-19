@@ -10,20 +10,20 @@ import (
 // Run function performs the copying of specific files and symlink creation
 func Run(srcDir, destDir string) error {
 	// Copy the orchestrator binary
-	orchestratorSrc := filepath.Join(srcDir, "orchestrator")
-	orchestratorDest := filepath.Join(destDir, "orchestrator")
+	orchestratorSrc := filepath.Join(srcDir, binOrchestrator)
+	orchestratorDest := filepath.Join(destDir, binOrchestrator)
 	if err := copyFile(orchestratorSrc, orchestratorDest); err != nil {
 		return err
 	}
 
 	// Copy the task agent binary
-	agentSrc := filepath.Join(srcDir, "circleci-agent")
-	agentDest := filepath.Join(destDir, "circleci-agent")
+	agentSrc := filepath.Join(srcDir, binCircleciAgent)
+	agentDest := filepath.Join(destDir, binCircleciAgent)
 	if err := copyFile(agentSrc, agentDest); err != nil {
 		return err
 	}
 	// Create symbolic link from "circleci-agent" to "circleci"
-	if err := os.Symlink(agentDest, filepath.Join(destDir, "circleci")); err != nil {
+	if err := os.Symlink(agentDest, filepath.Join(destDir, binCircleci)); err != nil {
 		return err
 	}
 
