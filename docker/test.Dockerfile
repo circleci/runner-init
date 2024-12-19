@@ -1,9 +1,9 @@
 FROM scratch as builder
 
-ARG ARCH
+ARG TARGETPLATFORM
 
-COPY ./target/bin/${ARCH}/orchestrator /
-COPY ./target/bin/${ARCH}/fake-task-agent /circleci-agent
+COPY ./target/bin/${TARGETPLATFORM}/orchestrator /
+COPY ./target/bin/${TARGETPLATFORM}/fake-task-agent /circleci-agent
 
 FROM scratch
 
