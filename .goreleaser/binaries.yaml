@@ -5,7 +5,7 @@ dist: ./target
 builds:
   - id: orchestrator
     main: ./cmd/orchestrator
-    binary: ./bin/{{.Arch}}/orchestrator
+    binary: ./bin/{{.Os}}/{{.Arch}}/orchestrator
     ldflags: &ldflags
       - -s -w
       - -X github.com/circleci/runner-init/cmd.Version={{.Env.BUILD_VERSION}}
@@ -17,13 +17,16 @@ builds:
 
   - id: fake-task-agent
     main: ./internal/testing/faketaskagent
-    binary: ./bin/{{.Arch}}/fake-task-agent
+    binary: ./bin/{{.Os}}/{{.Arch}}/fake-task-agent
     ldflags:
       - -s -w
     env: [CGO_ENABLED=0]
     goos: [linux]
-    goarch: [amd64, arm64]
+    goarch: [amd64]
     no_unique_dist_dir: true
+
+archives:
+  - allow_different_binary_count: true
 
 release:
   disable: true
