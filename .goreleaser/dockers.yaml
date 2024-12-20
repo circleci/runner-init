@@ -9,6 +9,7 @@ release:
   disable: true # this stops GoReleaser from trying to add git tags itself
 
 dockers:
+  # Linux images
   - id: init-amd64
     image_templates: ["circleci/runner-init:agent-amd64{{.Env.IMAGE_TAG_SUFFIX}}"]
     skip_push: "{{.Env.SKIP_PUSH}}"
@@ -16,11 +17,9 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
       - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
     extra_files:
-      - ./target/bin/amd64/orchestrator
-
+      - ./target/bin/linux/amd64/orchestrator
   - id: init-arm64
     image_templates: ["circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"]
     skip_push: "{{.Env.SKIP_PUSH}}"
@@ -28,11 +27,11 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
       - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
     extra_files:
-      - ./target/bin/arm64/orchestrator
+      - ./target/bin/linux/arm64/orchestrator
 
+  # Image used in the `circleci-runner` acceptance tests
   - id: testinit-amd64
     image_templates: ["circleci/runner-init:test-agent-amd64"]
     skip_push: "{{ .Env.SKIP_PUSH_TEST_AGENT }}"
@@ -40,22 +39,9 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
-      - "--build-arg=ARCH=amd64"
     extra_files:
-      - ./target/bin/amd64/orchestrator
-      - ./target/bin/amd64/fake-task-agent
-
-  - id: testinit-arm64
-    image_templates: ["circleci/runner-init:test-agent-arm64"]
-    skip_push: "{{ .Env.SKIP_PUSH_TEST_AGENT }}"
-    dockerfile: ./docker/test.Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--build-arg=ARCH=arm64"
-    extra_files:
-      - ./target/bin/arm64/orchestrator
-      - ./target/bin/arm64/fake-task-agent
+      - ./target/bin/linux/amd64/orchestrator
+      - ./target/bin/linux/amd64/fake-task-agent
 
 docker_manifests:
   - name_template: "circleci/runner-init:agent{{.Env.IMAGE_TAG_SUFFIX}}"
@@ -67,7 +53,6 @@ docker_manifests:
   - name_template: "circleci/runner-init:test-agent"
     image_templates:
       - "circleci/runner-init:test-agent-amd64"
-      - "circleci/runner-init:test-agent-arm64"
     skip_push: "{{ .Env.SKIP_PUSH_TEST_AGENT }}"
 
 docker_signs:
