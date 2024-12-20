@@ -1,4 +1,5 @@
 ARG PICARD_VERSION=agent
+ARG WINDOWS_VERSION
 
 FROM --platform=${BUILDPLATFORM} circleci/picard:${PICARD_VERSION} AS task-agent-image
 
@@ -9,10 +10,8 @@ ARG TARGETPLATFORM
 COPY --from=task-agent-image /opt/circleci/${TARGETPLATFORM}/circleci-agent /circleci-agent.exe
 COPY ./target/bin/${TARGETPLATFORM}/orchestrator.exe /
 
-FROM mcr.microsoft.com/windows/nanoserver:ltsc2019
+FROM mcr.microsoft.com/windows/nanoserver:${WINDOWS_VERSION}
 
 COPY --from=builder / /
 
-WORKDIR /
-
-ENTRYPOINT ["orchestrator.exe", "init"]
+ENTRYPOINT ["/orchestrator", "init"]
