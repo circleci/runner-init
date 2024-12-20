@@ -143,7 +143,7 @@ jobs:
                   gcc -v
       - with-go-cache:
           steps:
-            - run: ./do test ./...
+            - run: ./do test ./... -count 2
       - notify_failing_main
 
   build:
