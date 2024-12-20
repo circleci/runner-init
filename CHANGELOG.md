@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#97](https://github.com/circleci/runner-init/pull/97) Add timeout for the "wait-for-readiness" check on startup. This is so that GOAT doesn't wait indefinitely if there's a problem, ensuring a timely reaping of the task pod.
 - [#89](https://github.com/circleci/runner-init/pull/89) [INTERNAL] Add an option to wait for a readiness file, which is used via a shared volume to signal the readiness of all containers in the task pod.
 - [#71](https://github.com/circleci/runner-init/pull/71) [INTERNAL] Bump `ex` to `v1.0.12715-ada3e6b` and Go to `1.23`, which also required a bump in `golangci-lint` to `1.62.0` and addressing new lint errors that came along with that.
 - [#54](https://github.com/circleci/runner-init/pull/54) [INTERNAL] Forward signals from the task orchestrator (PID 1) to the custom command.

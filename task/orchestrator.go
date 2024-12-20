@@ -28,7 +28,11 @@ type Orchestrator struct {
 	cancelTask context.CancelFunc
 }
 
-var reapTimeout = 2 * time.Second // can be overridden in tests
+var (
+	// These can be overridden in tests
+	reapTimeout             = 2 * time.Second
+	waitForReadinessTimeout = 10 * time.Minute
+)
 
 func NewOrchestrator(config Config, runnerClient *runner.Client, gracePeriod time.Duration) *Orchestrator {
 	if runnerClient == nil {
@@ -109,6 +113,8 @@ func (o *Orchestrator) waitForReadiness(ctx context.Context) (err error) {
 		span.AddField("ready", err == nil)
 		o11y.End(span, &err)
 	}()
+	ctx, cancel := context.WithTimeout(ctx, waitForReadinessTimeout) // so we don't wait indefinitely if there's a problem
+	defer cancel()
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

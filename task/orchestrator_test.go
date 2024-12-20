@@ -316,6 +316,18 @@ func TestOrchestrator_waitForReadiness(t *testing.T) {
 		err := o.waitForReadiness(ctx)
 		assert.NilError(t, err)
 	})
+
+	t.Run("timed out", func(t *testing.T) {
+		ctx := testcontext.Background()
+		originalTimeout := waitForReadinessTimeout
+		waitForReadinessTimeout = 1 * time.Nanosecond
+		t.Cleanup(func() { waitForReadinessTimeout = originalTimeout })
+
+		o := Orchestrator{}
+
+		err := o.waitForReadiness(ctx)
+		assert.Check(t, cmp.ErrorContains(err, "context deadline exceeded"))
+	})
 }
 
 func beFakeTaskAgent(t *testing.T) {
