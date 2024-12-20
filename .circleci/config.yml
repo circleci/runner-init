@@ -135,7 +135,7 @@ jobs:
             equal: [ << parameters.os >>, "windows" ]
           steps:
             - run:
-                name: "Install GCC"
+                name: "Install GCC, since we need cgo for the race detector"
                 command: |
                   choco install mingw -y
                   echo 'export PATH="$PATH:/c/ProgramData/mingw64/mingw64/bin"' >> ~/.bash_profile

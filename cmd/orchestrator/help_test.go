@@ -13,7 +13,7 @@ import (
 
 func TestHelp(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip()
+		t.Skip("Can't be bothered to add golden files for Windows")
 	}
 
 	cli := &cli{}

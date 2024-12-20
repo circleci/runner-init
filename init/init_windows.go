@@ -13,7 +13,7 @@ const (
 	binCircleci      = "circleci.exe"
 )
 
-// Run function performs the copying of specific files and symlink creation
+// Run function performs the copying of the orchestrator and task-agent binaries
 func Run(srcDir, destDir string) error {
 	// Copy the orchestrator binary
 	orchestratorSrc := filepath.Join(srcDir, binOrchestrator)
@@ -22,7 +22,9 @@ func Run(srcDir, destDir string) error {
 		return err
 	}
 
-	// Copy the task agent binaries
+	// Copy the task agent binaries. We copy the binaries instead of creating a symlink
+	// to `circleci` as we do on Linux, since we do not have the necessary privileges
+	// to create symlinks to the shared volume on Windows.
 	agentSrc := filepath.Join(srcDir, binCircleciAgent)
 	agentDests := []string{filepath.Join(destDir, binCircleciAgent), filepath.Join(destDir, binCircleci)}
 	for _, dest := range agentDests {
