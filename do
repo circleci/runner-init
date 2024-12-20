@@ -44,9 +44,15 @@ images() {
 
     [[ -f ./bin/goreleaser ]] || install-go-bin "github.com/goreleaser/goreleaser/v2@latest"
 
+    docker buildx create --name circleci-runner-init-windows-builder \
+        --driver=docker-container --driver-opt image=moby/buildkit:rootless || true
+
     skip="${SKIP_PUSH:-true}"
+    [ "${SKIP_PUSH:-true}" = "true" ] && push_windows="false" || push_windows="true"
+
     SKIP_PUSH="${skip}" \
         SKIP_PUSH_TEST_AGENT="${SKIP_PUSH_TEST_AGENT:-${skip}}" \
+        PUSH_WINDOWS="${push_windows}" \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX:-""}" \
         PICARD_VERSION="${PICARD_VERSION:-agent}" \
         VERSION="${GORELEASER_VERSION}" \
@@ -112,7 +118,7 @@ test() {
 
     mkdir -p "${reportDir}"
     # -count=1 is used to forcibly disable test result caching
-    ./bin/gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
+    CGO_ENABLED=1 ./bin/gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
 }
 
 # This variable is used, but shellcheck can't tell.
@@ -158,7 +164,7 @@ install-github-binary() {
         local unpack='unzip'
     fi
 
-    local tmp=$(mktemp -d ${TMPDIR:-/tmp/}do-install-github-binary.XXXXXX)
+    local tmp=$(mktemp -d -t do-install-github-binary.XXXXXX)
     trap "{ rm -rf $tmp; }" EXIT
 
     set -x
@@ -171,7 +177,7 @@ install-github-binary() {
     $unpack "$tmp/download"
     popd
 
-    local binary=$(find "$tmp" -name "$repo*" -type f)
+    local binary=$(/usr/bin/find "$tmp" -name "$repo*" -type f)
     chmod +x "$binary"
     mv "$binary" ./bin/
 }
