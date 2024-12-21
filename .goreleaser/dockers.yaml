@@ -31,6 +31,55 @@ dockers:
     extra_files:
       - ./target/bin/linux/arm64/orchestrator
 
+  # Windows Images: Note that Windows containers require a container OS and have nuanced version compatibility
+  # (see https://learn.microsoft.com/en-us/virtualization/windowscontainers/deploy-containers/version-compatibility).
+  # Therefore, we target various versions for the base image. Currently, we provide images for Server 2019, 2022, and 2025.
+  - id: init-windows-server-2019
+    image_templates: ["circleci/runner-init:agent-windows-server-2019{{.Env.IMAGE_TAG_SUFFIX}}"]
+    dockerfile: ./docker/windows.Dockerfile
+    skip_push: "true" # we push during the build step since we cannot load a Windows image on Linux
+    use: buildx
+    build_flag_templates:
+      - "--builder=circleci-runner-init-windows-builder"
+      - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
+      - "--build-arg=WINDOWS_VERSION=ltsc2019"
+      - "--platform=windows/amd64"
+      - "--load=false"
+      - "--push={{.Env.PUSH_WINDOWS}}"
+      - "--provenance=false"
+    extra_files:
+      - ./target/bin/windows/amd64/orchestrator.exe
+  - id: init-windows-server-2022
+    image_templates: ["circleci/runner-init:agent-windows-server-2022{{.Env.IMAGE_TAG_SUFFIX}}"]
+    dockerfile: ./docker/windows.Dockerfile
+    skip_push: "true" # we push during the build step since we cannot load a Windows image on Linux
+    use: buildx
+    build_flag_templates:
+      - "--builder=circleci-runner-init-windows-builder"
+      - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
+      - "--build-arg=WINDOWS_VERSION=ltsc2022"
+      - "--platform=windows/amd64"
+      - "--load=false"
+      - "--push={{.Env.PUSH_WINDOWS}}"
+      - "--provenance=false"
+    extra_files:
+      - ./target/bin/windows/amd64/orchestrator.exe
+  - id: init-windows-server-2025
+    image_templates: ["circleci/runner-init:agent-windows-server-2025{{.Env.IMAGE_TAG_SUFFIX}}"]
+    dockerfile: ./docker/windows.Dockerfile
+    skip_push: "true" # we push during the build step since we cannot load a Windows image on Linux
+    use: buildx
+    build_flag_templates:
+      - "--builder=circleci-runner-init-windows-builder"
+      - "--build-arg=PICARD_VERSION={{.Env.PICARD_VERSION}}"
+      - "--build-arg=WINDOWS_VERSION=ltsc2025"
+      - "--platform=windows/amd64"
+      - "--load=false"
+      - "--push={{.Env.PUSH_WINDOWS}}"
+      - "--provenance=false"
+    extra_files:
+      - ./target/bin/windows/amd64/orchestrator.exe
+
   # Image used in the `circleci-runner` acceptance tests
   - id: testinit-amd64
     image_templates: ["circleci/runner-init:test-agent-amd64"]
@@ -48,6 +97,9 @@ docker_manifests:
     image_templates:
       - "circleci/runner-init:agent-amd64{{.Env.IMAGE_TAG_SUFFIX}}"
       - "circleci/runner-init:agent-arm64{{.Env.IMAGE_TAG_SUFFIX}}"
+      - "circleci/runner-init:agent-windows-server-2019{{.Env.IMAGE_TAG_SUFFIX}}"
+      - "circleci/runner-init:agent-windows-server-2022{{.Env.IMAGE_TAG_SUFFIX}}"
+      - "circleci/runner-init:agent-windows-server-2025{{.Env.IMAGE_TAG_SUFFIX}}"
     skip_push: "{{.Env.SKIP_PUSH}}"
 
   - name_template: "circleci/runner-init:test-agent"
