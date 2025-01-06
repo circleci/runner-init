@@ -6,3 +6,4 @@ github.com/alecthomas/kong,MIT
 github.com/gin-gonic/gin,MIT
 github.com/goccy/go-json,MIT
 github.com/hashicorp/go-reap,MPL-2.0
+github.com/circleci/ex,MIT
