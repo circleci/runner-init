@@ -17,7 +17,7 @@ orbs:
 executors:
   go:
     docker:
-      - image: cimg/go:1.22
+      - image: cimg/go:1.23
     resource_class: circleci-runner/rum-large
   ccc:
     docker:
