@@ -224,6 +224,7 @@ jobs:
               exit 1
             fi
             cat $SNYK_LICENSE_RESULT_FILE
+      - notify_failing_main
   
   scan:
     executor: ccc
