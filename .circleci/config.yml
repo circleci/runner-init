@@ -46,6 +46,7 @@ workflows:
           requires: [ build ]
       - vuln-scanner/vuln_scan:
           context: [ security-scanning, dockerhub-readonly, github-readonly ]
+          default_branch: cs/test-vuln-scanner
           upload_on_merge: true
       - oss-acknowledgement-check:
           requires: [ vuln-scanner/vuln_scan ]
