@@ -48,7 +48,7 @@ require (
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
-	github.com/circleci/ex v1.0.13516-07a74fe
+	github.com/circleci/ex v1.0.13575-ba45679
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
 	github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 // indirect
@@ -57,7 +57,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1 // indirect
 	github.com/honeycombio/beeline-go v1.18.0 // indirect
 	github.com/honeycombio/dynsampler-go v0.6.0 // indirect
-	github.com/honeycombio/libhoney-go v1.24.0 // indirect
+	github.com/honeycombio/libhoney-go v1.25.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/rollbar/rollbar-go v1.4.5 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
@@ -75,7 +75,7 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250102185135-69823020774d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250102185135-69823020774d // indirect
-	google.golang.org/grpc v1.69.2 // indirect
+	google.golang.org/grpc v1.69.4 // indirect
 	google.golang.org/protobuf v1.36.2 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 )
