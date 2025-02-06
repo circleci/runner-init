@@ -2,26 +2,22 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
-	"os/user"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
-
-	"github.com/circleci/ex/o11y"
 )
 
 type Command struct {
 	cmd            *exec.Cmd
 	stderrSaver    *prefixSuffixSaver
 	isStarted      atomic.Bool
+	isCompleted    atomic.Bool
 	forwardSignals bool
+	waitCh         chan error
 }
 
 func New(ctx context.Context, cmd []string, forwardSignals bool, user string, env ...string) Command {
@@ -30,6 +26,7 @@ func New(ctx context.Context, cmd []string, forwardSignals bool, user string, en
 		cmd:            newCmd(ctx, cmd, user, s, env...),
 		stderrSaver:    s,
 		forwardSignals: forwardSignals,
+		waitCh:         make(chan error, 1),
 	}
 }
 
@@ -44,8 +41,12 @@ func (c *Command) Start() error {
 		return fmt.Errorf("no underlying process")
 	}
 
+	go func() {
+		c.waitCh <- c.wait()
+	}()
+
 	if c.forwardSignals {
-		notifySignals(cmd)
+		forwardSignals(cmd)
 	}
 
 	c.isStarted.Store(true)
@@ -72,9 +73,15 @@ func (c *Command) StartWithStdin(b []byte) error {
 }
 
 func (c *Command) Wait() error {
+	return <-c.waitCh
+}
+
+func (c *Command) wait() error {
 	cmd := c.cmd
 	defer func() {
 		_ = cmd.Cancel()
+
+		c.isCompleted.Store(cmd.ProcessState != nil)
 	}()
 
 	err := cmd.Wait()
@@ -92,14 +99,7 @@ func (c *Command) IsRunning() (bool, error) {
 		return false, nil
 	}
 
-	if err := c.cmd.Process.Signal(syscall.Signal(0)); err == nil {
-		return true, nil
-
-	} else if !errors.Is(err, os.ErrProcessDone) {
-		return false, fmt.Errorf("unexpected error from signaling process: %w", err)
-	}
-
-	return false, nil
+	return !c.isCompleted.Load(), nil
 }
 
 func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefixSuffixSaver, env ...string) *exec.Cmd {
@@ -120,45 +120,13 @@ func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefix
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = io.MultiWriter(os.Stderr, stderrSaver)
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid:   true,
-		Pdeathsig: syscall.SIGKILL,
-	}
-
-	cmd.Cancel = func() error {
-		// Kill the child process group
-		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
 
 	if user != "" {
-		maybeSwitchUser(ctx, cmd, user)
+		switchUser(ctx, cmd, user)
 	}
+
+	additionalSetup(ctx, cmd)
 
 	return cmd
-}
-
-func maybeSwitchUser(ctx context.Context, cmd *exec.Cmd, username string) {
-	usr, err := user.Lookup(username)
-
-	if err == nil {
-		cmd.Env = append(cmd.Env, "HOME="+usr.HomeDir)
-
-		uid, _ := strconv.Atoi(usr.Uid)
-		gid, _ := strconv.Atoi(usr.Gid)
-		//nolint:gosec // G115: we only support POSIX right now, so this won't overflow
-		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
-	} else {
-		o11y.LogError(ctx, "failed to lookup user", err, o11y.Field("username", username))
-	}
-}
-
-func notifySignals(cmd *exec.Cmd) {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-
-	go func() {
-		for sig := range ch {
-			_ = cmd.Process.Signal(sig)
-		}
-	}()
 }

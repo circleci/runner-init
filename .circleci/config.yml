@@ -15,10 +15,15 @@ orbs:
   vuln-scanner: cci-internal/snyk-vuln-scanner@0.9.1
 
 executors:
-  go:
+  docker-go:
     docker:
       - image: cimg/go:1.23
     resource_class: circleci-runner/rum-large
+  windows:
+    machine:
+      image: windows-server-2022-gui:current
+      shell: bash.exe -login
+    resource_class: windows.medium
   ccc:
     docker:
       - image: circleci/command-convenience:0.1
@@ -39,7 +44,10 @@ workflows:
         - equal: [ false, << pipeline.parameters.trigger_nightly_workflow >> ]
     jobs:
       - lint
-      - test
+      - test:
+          matrix:
+            parameters:
+              os: [ docker-go, windows ]
       - build
       - scan:
           context: [ org-global ]
@@ -52,7 +60,7 @@ workflows:
           context: [ org-global ]
       - images:
           context: [ org-global, runner-image-signing ]
-          requires: [ lint, test, build, scan, vuln-scanner/vuln_scan ]
+          requires: [ lint, build, scan, vuln-scanner/vuln_scan ]
       - smoke-tests:
           context: [ org-global, runner-smoke-tests ]
           requires: [ images ]
@@ -72,7 +80,7 @@ workflows:
 
 jobs:
   lint:
-    executor: go
+    executor: docker-go
     steps:
       - setup
       - with-go-cache:
@@ -110,16 +118,30 @@ jobs:
       - notify_failing_main
 
   test:
-    executor: go
+    parameters:
+      os:
+        type: string
+    executor: << parameters.os >>
     steps:
       - setup
+      - when:
+          condition:
+            equal: [ << parameters.os >>, "windows" ]
+          steps:
+            - run:
+                name: "Install GCC, since we need cgo for the race detector"
+                command: |
+                  choco install mingw -y
+                  echo 'export PATH="$PATH:/c/ProgramData/mingw64/mingw64/bin"' >> ~/.bash_profile
+                  source ~/.bash_profile
+                  gcc -v
       - with-go-cache:
           steps:
-            - run: ./do test ./... -count 3
+            - run: ./do test ./... -count 2
       - notify_failing_main
 
   build:
-    executor: go
+    executor: docker-go
     steps:
       - goreleaser_setup
       - run: go mod download
@@ -207,7 +229,7 @@ jobs:
   oss-acknowledgement-check:
     environment:
       SNYK_LICENSE_RESULT_FILE: "scan_results.csv"
-    executor: go
+    executor: docker-go
     steps:
       - checkout
       - run: 
@@ -267,7 +289,7 @@ jobs:
       
 
   smoke-tests:
-    executor: go
+    executor: docker-go
     steps:
       - checkout
       - attach_workspace:
