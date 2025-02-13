@@ -5,7 +5,7 @@ go 1.22.7
 toolchain go1.23.6
 
 require (
-	github.com/alecthomas/kong v1.8.0
+	github.com/alecthomas/kong v1.8.1
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/goccy/go-json v0.10.5
