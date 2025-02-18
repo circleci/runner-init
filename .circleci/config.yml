@@ -289,7 +289,6 @@ commands:
     steps:
       - checkout
       - run: go mod download
-      - run: ./do install-devtools
 
   store_results:
     steps:
