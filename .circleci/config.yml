@@ -121,8 +121,7 @@ jobs:
   build:
     executor: go
     steps:
-      - goreleaser_setup
-      - run: go mod download
+      - setup
       - with-go-cache:
           steps:
             - run:
@@ -138,9 +137,9 @@ jobs:
   images:
     executor: linux_machine
     steps:
+      - setup
       - attach_workspace:
           at: /tmp/workspace
-      - goreleaser_setup
       - docker_login
       - when:
           condition:
@@ -288,6 +287,8 @@ commands:
   setup:
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run: go mod download
 
   store_results:
@@ -303,26 +304,6 @@ commands:
           path: test-reports
       - store_test_results:
           path: test-reports
-
-  goreleaser_setup:
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Install GoReleaser
-          command: |
-            if [[ "$(command -v apk)" ]]; then
-              # Alpine doesn't come with the coreutils' sha256sum, which the GoReleaser Bash script expects...
-              apk upgrade && apk add coreutils
-            fi
-
-            curl -sfL https://goreleaser.com/static/run -o ./bin/goreleaser --create-dirs && chmod +x ./bin/goreleaser
-
-            if [[ $(uname -m) == aarch64 ]]; then
-              # A little hack to get the GoReleaser Bash script working on ARM64...
-              sed -i 's/$(uname -m)/arm64/g' ./bin/goreleaser
-            fi
 
   docker_login:
     steps:
