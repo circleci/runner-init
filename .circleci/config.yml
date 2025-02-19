@@ -121,8 +121,7 @@ jobs:
   build:
     executor: go
     steps:
-      - goreleaser_setup
-      - run: go mod download
+      - setup
       - with-go-cache:
           steps:
             - run:
@@ -140,69 +139,65 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - goreleaser_setup
+      - setup
       - docker_login
-      - when:
-          condition:
-            not:
-              equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
+      - with-go-cache:
           steps:
-            - notify_slack:
-                header: ":goat: Release triggered"
-                version: "$(<version.txt)"
-      - when:
-          condition:
-            equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
-          steps:
-            - notify_slack:
-                header: ":goat: :webhooks: Webhook trigger: Images rebuilt and published"
-                version: "$(<version.txt)"
-      - run:
-          name: Install Cosign binary
-          command: |
-            curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
-            mv cosign-linux-amd64 ./bin/cosign
-            chmod +x ./bin/cosign
-      - run:
-          name: Create cosign.key
-          command: echo -e ${COSIGN_KEY} >cosign.key
-      - run:
-          name: Build and push dev images for use in the smoke tests
-          command: |
-            echo "export IMAGE_TAG_SUFFIX=\"-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)\"" >>/tmp/workspace/environment
-            source /tmp/workspace/environment
-
-            SKIP_PUSH='false' \
-              SKIP_PUSH_TEST_AGENT='true' \
-              ./do images
-      - run:
-          name: Set SKIP_PUSH variable
-          command: |
-            echo 'export SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi)' >> $BASH_ENV
-      - run:
-          name: Build and maybe push images for cloud
-          command: ./do images
-      - when:
-          # N.b., GoReleaser/Cosign will only sign during the publishing phase, which is only on main
-          condition:
-            equal: [ << pipeline.git.branch >>, main ]
-          steps:
+            - when:
+                condition:
+                  not:
+                    equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
+                steps:
+                  - notify_slack:
+                      header: ":goat: Release triggered"
+                      version: "$(<version.txt)"
+            - when:
+                condition:
+                  equal: [ << pipeline.parameters.triggered_by_webhook >>, true ]
+                steps:
+                  - notify_slack:
+                      header: ":goat: :webhooks: Webhook trigger: Images rebuilt and published"
+                      version: "$(<version.txt)"
             - run:
-                name: Verify the manifest signature
-                command: ./bin/cosign verify --key cosign.pub circleci/runner-init:agent
-      - run:
-          name: Clone the server repo
-          command: |
-            git clone "https://scotty-approver:${SCOTTY_APPROVER_TOKEN}@github.com/circleci/server.git"
-            echo 'export SERVER_REPO_PATH="$PWD/server"' >> $BASH_ENV
-      - run:
-          name: Build and maybe push images for server
-          command: ./do images-for-server
-      - notify_failing_main
-      - persist_to_workspace:
-          root: /tmp/workspace
-          paths:
-            - environment
+                name: Create cosign.key
+                command: echo -e ${COSIGN_KEY} >cosign.key
+            - run:
+                name: Build and push dev images for use in the smoke tests
+                command: |
+                  echo "export IMAGE_TAG_SUFFIX=\"-${CIRCLE_BUILD_NUM}-$(git rev-parse --short HEAD)\"" >>/tmp/workspace/environment
+                  source /tmp/workspace/environment
+
+                  SKIP_PUSH='false' \
+                    SKIP_PUSH_TEST_AGENT='true' \
+                    ./do images
+            - run:
+                name: Set SKIP_PUSH variable
+                command: |
+                  echo 'export SKIP_PUSH=$(if [ "$CIRCLE_BRANCH" == "main" ]; then echo "false"; else echo "true"; fi)' >> $BASH_ENV
+            - run:
+                name: Build and maybe push images for cloud
+                command: ./do images
+            - when:
+                # N.b., GoReleaser/Cosign will only sign during the publishing phase, which is only on main
+                condition:
+                  equal: [ << pipeline.git.branch >>, main ]
+                steps:
+                  - run:
+                      name: Verify the manifest signature
+                      command: go tool cosign verify --key cosign.pub circleci/runner-init:agent
+            - run:
+                name: Clone the server repo
+                command: |
+                  git clone "https://scotty-approver:${SCOTTY_APPROVER_TOKEN}@github.com/circleci/server.git"
+                  echo 'export SERVER_REPO_PATH="$PWD/server"' >> $BASH_ENV
+            - run:
+                name: Build and maybe push images for server
+                command: ./do images-for-server
+            - notify_failing_main
+            - persist_to_workspace:
+                root: /tmp/workspace
+                paths:
+                  - environment
 
   oss-acknowledgement-check:
     environment:
@@ -288,8 +283,9 @@ commands:
   setup:
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run: go mod download
-      - run: ./do install-devtools
 
   store_results:
     steps:
@@ -304,26 +300,6 @@ commands:
           path: test-reports
       - store_test_results:
           path: test-reports
-
-  goreleaser_setup:
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Install GoReleaser
-          command: |
-            if [[ "$(command -v apk)" ]]; then
-              # Alpine doesn't come with the coreutils' sha256sum, which the GoReleaser Bash script expects...
-              apk upgrade && apk add coreutils
-            fi
-
-            curl -sfL https://goreleaser.com/static/run -o ./bin/goreleaser --create-dirs && chmod +x ./bin/goreleaser
-
-            if [[ $(uname -m) == aarch64 ]]; then
-              # A little hack to get the GoReleaser Bash script working on ARM64...
-              sed -i 's/$(uname -m)/arm64/g' ./bin/goreleaser
-            fi
 
   docker_login:
     steps:

@@ -55,7 +55,6 @@ The smoke tests are run exclusively in CI using a published dev `runner-init` im
 
 Make sure the following dependencies are installed:
 - **Go** - The project uses Go, with the required version specified in the `go.mod` file. Install Go from the [official Go website](https://go.dev/dl/).
-- **Dev tools** - Use `./do install-devtools` to install development tools such as `goreleaser`, `gotestsum`, and other necessary dependencies for building and testing the project as managed by the `do` script.
 
 ### Building the Project
 
