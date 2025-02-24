@@ -11,6 +11,6 @@ COPY ./target/bin/${TARGETPLATFORM}/orchestrator /
 
 FROM scratch
 
-COPY --from=builder / /
+COPY --from=builder --chmod=755 / /
 
 ENTRYPOINT ["/orchestrator", "init"]
