@@ -19,6 +19,7 @@ import (
 	"github.com/circleci/runner-init/cmd/setup"
 	initialize "github.com/circleci/runner-init/init"
 	"github.com/circleci/runner-init/task"
+	"github.com/circleci/runner-init/task/taskerrors"
 )
 
 type cli struct {
@@ -45,7 +46,9 @@ type runTaskCmd struct {
 
 func main() {
 	err := run(cmd.Version, cmd.Date)
-	if err != nil && !errors.Is(err, termination.ErrTerminated) {
+	if err != nil &&
+		!errors.Is(err, termination.ErrTerminated) &&
+		!errors.As(err, &taskerrors.HandledError{}) {
 		log.Fatal(err)
 	}
 }

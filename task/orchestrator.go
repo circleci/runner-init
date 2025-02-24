@@ -14,6 +14,7 @@ import (
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/task/cmd"
+	"github.com/circleci/runner-init/task/taskerrors"
 )
 
 type Orchestrator struct {
@@ -48,11 +49,14 @@ func NewOrchestrator(config Config, runnerClient *runner.Client, gracePeriod tim
 }
 
 func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
+	parentCtx, span := o11y.StartSpan(parentCtx, "run-task")
+
 	ctx := o.taskContext(parentCtx)
 	o.reaper.Enable(ctx)
 
 	defer func() {
 		err = o.shutdown(ctx, err)
+		o11y.End(span, &err)
 	}()
 
 	if len(o.config.Cmd) > 0 {
@@ -170,7 +174,7 @@ func (o *Orchestrator) executeAgent(ctx context.Context) error {
 	o.taskAgent = cmd.New(ctx, agent.Cmd, false, cfg.User, agent.Env...)
 
 	if err := o.taskAgent.StartWithStdin([]byte(cfg.Token.Raw())); err != nil {
-		return retryableErrorf("failed to start task agent command: %w", err)
+		return taskerrors.RetryableErrorf("failed to start task agent command: %w", err)
 	}
 
 	if err := o.taskAgent.Wait(); err != nil {
@@ -211,7 +215,7 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 	}
 
 	var unclaimErr error
-	if errors.As(err, &retryableError{}) || c.EnableUnsafeRetries {
+	if errors.As(err, &taskerrors.RetryableError{}) || c.EnableUnsafeRetries {
 		unclaimErr = o.runnerClient.UnclaimTask(ctx, c.TaskID, c.Token)
 		if unclaimErr == nil {
 			o11y.LogError(ctx, "retrying task after encountering a retryable error", err)
@@ -226,9 +230,10 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 	failErr := o.runnerClient.FailTask(ctx, time.Now(), c.Allocation, err.Error())
 	if failErr != nil {
 		failErr = fmt.Errorf("failed to send fail event for task: %w", failErr)
+		return errors.Join(failErr, unclaimErr, err)
 	}
 
-	return errors.Join(failErr, unclaimErr, err)
+	return taskerrors.NewHandledError(errors.Join(unclaimErr, err))
 }
 
 func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Context) error) {
@@ -239,12 +244,4 @@ func (o *Orchestrator) HealthChecks() (_ string, ready, live func(ctx context.Co
 			}
 			return nil
 		}, nil
-}
-
-type retryableError struct {
-	error
-}
-
-func retryableErrorf(format string, a ...any) retryableError {
-	return retryableError{fmt.Errorf(format, a...)}
 }

@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#133](https://github.com/circleci/runner-init/pull/133) Don't re-handle task errors. If GOAT handles a task error (either with an infra-fail or retry), don't exit with a nonzero status code. Doing so causes container agent to overwrite the original error message in the UI.
 - [#98](https://github.com/circleci/runner-init/pull/98) [INTERNAL] A small refactor to the builds and Dockerfiles in preparation for adding Windows support.
 - [#97](https://github.com/circleci/runner-init/pull/97) Add timeout for the "wait-for-readiness" check on startup. This is so that GOAT doesn't wait indefinitely if there's a problem, ensuring a timely reaping of the task pod.
 - [#89](https://github.com/circleci/runner-init/pull/89) [INTERNAL] Add an option to wait for a readiness file, which is used via a shared volume to signal the readiness of all containers in the task pod.
