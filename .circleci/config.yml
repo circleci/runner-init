@@ -12,7 +12,7 @@ parameters:
 
 orbs:
   slack: circleci/slack@5.1.1
-  vuln-scanner: cci-internal/snyk-vuln-scanner@0.9.1
+  vuln-scanner: cci-internal/vuln-scanner@0.11.3
 
 executors:
   go:
