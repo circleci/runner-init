@@ -6,7 +6,7 @@ FROM scratch AS builder
 
 ARG TARGETPLATFORM
 
-COPY --from=task-agent-image /opt/circleci/${TARGETPLATFORM}/circleci-agent /
+COPY --from=task-agent-image /opt/circleci/${TARGETPLATFORM}/circleci-agent* /
 COPY ./target/bin/${TARGETPLATFORM}/orchestrator /
 
 FROM scratch
