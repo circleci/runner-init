@@ -18,16 +18,10 @@ build() {
     echo "${BUILD_VERSION:-dev}" | tee ./target/version.txt
 }
 
-help_oss_acknowledge="Populate the license attribution file"
-oss_acknowledge() {
-   # to get around the hard fail for unbound variables
-   TOKEN=${SNYK_TOKEN:-}
-   if [[ -z "${TOKEN}" ]]; then
-      echo "Set \$SNYK_TOKEN with API token from https://app.snyk.io/account"
-      exit 1
-   fi
-   echo "updating snyk-project-licenses.csv with current direct dependency licenses"
-   SNYK_PROJECT_ID="fe17322a-c8ab-442d-96cb-1658da1cd57b" go run .circleci/oss-scan.go
+help_license_attributions="Regenerate the third-party license attributions file."
+license-attributions() {
+  go tool go-licenses report --ignore=gotest  ./... \
+    --template ./templates/licenses-csv.tpl >${LICENSE_ATTRIBUTIONS_FILE:-./go-project-licenses.csv}
 }
 
 # This variable is used, but shellcheck can't tell.
