@@ -756,6 +756,8 @@ github.com/google/go-github/v55 v55.0.0 h1:4pp/1tNMB9X/LuAhs5i0KQAE40NmiR/y6prLN
 github.com/google/go-github/v55 v55.0.0/go.mod h1:JLahOTA1DnXzhxEymmFF5PP2tSS9JVNj68mSZNDwskA=
 github.com/google/go-github/v63 v63.0.0 h1:13xwK/wk9alSokujB9lJkuzdmQuVn2QCPeck76wR3nE=
 github.com/google/go-github/v63 v63.0.0/go.mod h1:IqbcrgUmIcEaioWrGYei/09o+ge5vhffGOcxrO0AfmA=
+github.com/google/go-licenses/v2 v2.0.0-alpha.1 h1:2EMzW/1PWYvgOxBXsWl7b350vI0c/kf5Fh7z4AR1skM=
+github.com/google/go-licenses/v2 v2.0.0-alpha.1/go.mod h1:HlMUpsa+mbs8EqdlY0BDfCn0ZK7Y7NQoRCGYhNoox64=
 github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD/fhyJ8=
 github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17icRSOU623lUBU=
 github.com/google/go-replayers/grpcreplay v1.3.0 h1:1Keyy0m1sIpqstQmgz307zhiJ1pV4uIlFds5weTmxbo=
@@ -767,6 +769,8 @@ github.com/google/gofuzz v1.2.0 h1:xRy4A+RhZaiKjJ1bPfwQ8sedCA+YS2YcCHW6ec7JMi0=
 github.com/google/gofuzz v1.2.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/ko v0.15.4 h1:0blRbIdPmSy6v4LvedGxbI/8krdJYQgbSih3v6Y8V1c=
 github.com/google/ko v0.15.4/go.mod h1:ZkcmfV91Xt6ZzOBHc/cXXGYnqWdNWDVy/gHoUU9sjag=
+github.com/google/licenseclassifier/v2 v2.0.0 h1:1Y57HHILNf4m0ABuMVb6xk4vAJYEUO0gDxNpog0pyeA=
+github.com/google/licenseclassifier/v2 v2.0.0/go.mod h1:cOjbdH0kyC9R22sdQbYsFkto4NGCAc+ZSwbeThazEtM=
 github.com/google/martian/v3 v3.3.3 h1:DIhPTQrbPkgs2yJYdXU/eNACCG5DVQjySNRNlflZ9Fc=
 github.com/google/martian/v3 v3.3.3/go.mod h1:iEPrYcgCF7jA9OtScMFQyAlZZ4YXTKEtJ1E6RWzmBA0=
 github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
@@ -1184,6 +1188,8 @@ github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJ
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
 github.com/otiai10/mint v1.3.0/go.mod h1:F5AjcsTsWUqX+Na9fpHb52P8pcRX2CI6A3ctIT91xUo=
 github.com/otiai10/mint v1.3.1/go.mod h1:/yxELlJQ0ufhjUwhshSj+wFjZ78CnZ48/1wtmBH1OTc=
+github.com/otiai10/mint v1.5.1 h1:XaPLeE+9vGbuyEHem1JNk3bYc7KKqyI/na0/mLd/Kks=
+github.com/otiai10/mint v1.5.1/go.mod h1:MJm72SBthJjz8qhefc4z1PYEieWmy8Bku7CjcAqyUSM=
 github.com/pborman/getopt v0.0.0-20180811024354-2b5b3bfb099b/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
 github.com/pborman/uuid v1.2.1 h1:+ZZIw58t/ozdjRaXh/3awHfmWRbzYxJoAdNJxe/3pvw=
 github.com/pborman/uuid v1.2.1/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=

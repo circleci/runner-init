@@ -274,9 +274,11 @@ require (
 	github.com/google/go-containerregistry v0.20.3 // indirect
 	github.com/google/go-github/v55 v55.0.0 // indirect
 	github.com/google/go-github/v63 v63.0.0 // indirect
+	github.com/google/go-licenses/v2 v2.0.0-alpha.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/ko v0.15.4 // indirect
+	github.com/google/licenseclassifier/v2 v2.0.0 // indirect
 	github.com/google/rpmpack v0.6.1-0.20240329070804-c2247cbb881a // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/safetext v0.0.0-20220905092116-b49f7bc46da2 // indirect
@@ -412,6 +414,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/otiai10/copy v1.14.0 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
@@ -619,6 +622,7 @@ require (
 
 tool (
 	github.com/golangci/golangci-lint/cmd/golangci-lint
+	github.com/google/go-licenses/v2
 	github.com/goreleaser/goreleaser/v2
 	github.com/sigstore/cosign/v2/cmd/cosign
 	gotest.tools/gotestsum
