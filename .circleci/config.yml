@@ -209,24 +209,26 @@ jobs:
     executor: go-medium
     steps:
       - checkout
-      - run: ./do license-attributions
-      - run:
-          name: "Check all third-party Go licenses are attributed"
-          command: |
-            diff_output=$(git diff HEAD -- ./go-project-licenses.csv)
-            if [[ -n "$diff_output" ]]; then
-              echo "Changes detected in 'go-project-licenses.csv':"
-              echo
-              echo "${diff_output}"
-              echo
-              echo "1) Run './do license-attributions' locally and commit the results."
-              echo "2) Update the Open Source Acknowledgments in 'runner-init.csv':"
-              echo "   https://github.com/circleci/circleci-docs/blob/master/jekyll/_cci2/runner-init.csv"
-              echo "   Unknown licenses may require manual intervention."
-              exit 1
-            else
-              echo "No changes detected in 'go-project-licenses.csv'."
-            fi
+      - with-go-cache:
+          steps:
+            - run: ./do license-attributions
+            - run:
+                name: "Check all third-party Go licenses are attributed"
+                command: |
+                  diff_output=$(git diff HEAD -- ./go-project-licenses.csv)
+                  if [[ -n "$diff_output" ]]; then
+                    echo "Changes detected in 'go-project-licenses.csv':"
+                    echo
+                    echo "${diff_output}"
+                    echo
+                    echo "1) Run './do license-attributions' locally and commit the results."
+                    echo "2) Update the Open Source Acknowledgments in 'runner-init.csv':"
+                    echo "   https://github.com/circleci/circleci-docs/blob/master/jekyll/_cci2/runner-init.csv"
+                    echo "   Unknown licenses may require manual intervention."
+                    exit 1
+                  else
+                    echo "No changes detected in 'go-project-licenses.csv'."
+                  fi
 
   scan:
     executor: ccc
