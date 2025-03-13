@@ -1,4 +1,4 @@
-Usage: test-app [<source> [<destination>]] [flags]
+Usage: test-app [<source> [<destination>]]
 
 Arguments:
   [<source>]         Path where to copy the agent binaries from ($SOURCE).
