@@ -15,7 +15,7 @@ orbs:
   vuln-scanner: cci-internal/vuln-scanner@0.11.3
 
 x-data:
-  go_image: &goimage cimg/go:1.24.1
+  go_image: &goimage cimg/go:1.24.2
 
 executors:
   go-medium:
