@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/alecthomas/kong v1.10.0
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/goccy/go-json v0.10.5
 	github.com/google/go-cmp v0.7.0
