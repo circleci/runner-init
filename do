@@ -46,8 +46,8 @@ images() {
 help_images_for_server="Build and push the Docker images and manifests for supported server versions."
 images-for-server() {
     MAJOR_SERVER_VERSION=4
-    MINOR_VERSION_START=9
-    MINOR_VERSION_END=0
+    MINOR_VERSION_START=7
+    MINOR_VERSION_END=9
 
     for minor in $(seq ${MINOR_VERSION_START} ${MINOR_VERSION_END}); do
         if [ "${minor}" -eq "${MINOR_VERSION_END}" ]; then
