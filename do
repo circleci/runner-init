@@ -30,9 +30,15 @@ help_images="Build and push the Docker images and manifests."
 images() {
     set -x
 
+    docker buildx create --name circleci-runner-init-windows-builder \
+        --driver=docker-container --driver-opt image=moby/buildkit:rootless || true
+
     skip="${SKIP_PUSH:-true}"
+    [ "${SKIP_PUSH:-true}" = "true" ] && push_windows="false" || push_windows="true"
+
     SKIP_PUSH="${skip}" \
         SKIP_PUSH_TEST_AGENT="${SKIP_PUSH_TEST_AGENT:-${skip}}" \
+        PUSH_WINDOWS="${push_windows}" \
         IMAGE_TAG_SUFFIX="${IMAGE_TAG_SUFFIX:-""}" \
         PICARD_VERSION="${PICARD_VERSION:-agent}" \
         go tool goreleaser \
@@ -92,7 +98,7 @@ help_test="Run the tests"
 test() {
     mkdir -p "${reportDir}"
     # -count=1 is used to forcibly disable test result caching
-    go tool gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
+    CGO_ENABLED=1 go tool gotestsum --junitfile="${reportDir}/junit.xml" -- -race -count=1 "${@:-./...}"
 }
 
 # This variable is used, but shellcheck can't tell.

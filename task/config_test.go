@@ -3,6 +3,7 @@ package task
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -92,7 +93,7 @@ func Test_Agent(t *testing.T) {
 	}
 
 	expectedEnv := []string{
-		fmt.Sprintf("PATH=%s:/path/to", os.Getenv("PATH")),
+		fmt.Sprintf("PATH=%s:%s", os.Getenv("PATH"), filepath.Dir("/path/to/agent")),
 	}
 
 	expectedAgent := Agent{
