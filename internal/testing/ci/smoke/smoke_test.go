@@ -77,11 +77,15 @@ func TestSmoke(t *testing.T) {
 			},
 		},
 		{
-			name:        "kubernetes success",
-			driver:      "kubernetes",
-			circleHost:  cli.Tests.Kubernetes.CircleHost,
-			circleToken: cli.Tests.Kubernetes.CircleToken,
-			namespace:   cli.Tests.Kubernetes.RunnerNamespace,
+			name:   "kubernetes success",
+			driver: "kubernetes",
+			//circleHost:  cli.Tests.Kubernetes.CircleHost,
+			//circleToken: cli.Tests.Kubernetes.CircleToken,
+			//namespace:   cli.Tests.Kubernetes.RunnerNamespace,
+			// TODO: Temporarily run the Kubernetes smoke tests on cloud until we complete https://circleci.atlassian.net/browse/ONPREM-2237
+			circleHost:  cli.Tests.Machine.CircleHost,
+			circleToken: cli.Tests.Machine.CircleToken,
+			namespace:   cli.Tests.Machine.RunnerNamespace,
 			skip:        cli.Tests.Kubernetes.Skip,
 			cases: []TestCase{
 				{
