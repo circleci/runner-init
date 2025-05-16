@@ -83,7 +83,7 @@ lint-report() {
     echo "Storing results as JUnit XML in ${output}" >&2
     mkdir -p "${reportDir}"
 
-    lint "--timeout 5m --out-format junit-xml | tee ${output}"
+    lint "--timeout 5m --output.junit-xml.path stdout | tee ${output}"
 }
 
 # This variable is used, but shellcheck can't tell.
