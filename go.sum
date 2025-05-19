@@ -396,8 +396,8 @@ github.com/chzyer/readline v1.5.1/go.mod h1:Eh+b79XXUwfKfcPLepksvw2tcLE/Ct21YObk
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/chzyer/test v1.0.0 h1:p3BQDXSxOhOG0P9z6/hGnII4LGiEPOYBhs8asl/fC04=
 github.com/chzyer/test v1.0.0/go.mod h1:2JlltgoNkt4TW/z9V/IzDdFaMTM2JPIi26O1pF38GC8=
-github.com/circleci/ex v1.0.15609-a2acd31 h1:8WAn356boXki5WEFupmn/q3uvR+qHU30efqQo+1Wm94=
-github.com/circleci/ex v1.0.15609-a2acd31/go.mod h1:V2Gyn8cYQZfYOCPT0oOOXXN4YQD/rsSLf8Trl+gYL1A=
+github.com/circleci/ex v1.0.15650-2d2940a h1:n5o00M5G4NB09rXaWJNo8bi8FTDWpoGHiCOarjrzHyU=
+github.com/circleci/ex v1.0.15650-2d2940a/go.mod h1:V2Gyn8cYQZfYOCPT0oOOXXN4YQD/rsSLf8Trl+gYL1A=
 github.com/ckaznocha/intrange v0.3.1 h1:j1onQyXvHUsPWujDH6WIjhyH26gkRt/txNlV7LspvJs=
 github.com/ckaznocha/intrange v0.3.1/go.mod h1:QVepyz1AkUoFQkpEqksSYpNpUo3c5W7nWh/s6SHIJJk=
 github.com/clbanning/mxj/v2 v2.5.5/go.mod h1:hNiWqW14h+kc+MdF9C6/YoRfjEJoR3ou6tn/Qo+ve2s=
