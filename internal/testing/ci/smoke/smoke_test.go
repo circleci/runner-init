@@ -116,8 +116,8 @@ func TestSmoke(t *testing.T) {
 				AgentVersion:    cli.Tests.Version,
 				IsCanary:        cli.Tests.IsCanary,
 				ExtraPipelineParameters: map[string]any{
-					"kubernetes_helm_chart_branch": cli.Tests.Kubernetes.HelmChartBranch,
-					"kubernetes_runner_init_tag":   cli.Tests.Kubernetes.RunnerInitTag,
+					"kubernetes_helm_chart_branch": cli.Tests.HelmChartBranch,
+					"kubernetes_runner_init_tag":   cli.Tests.RunnerInitTag,
 				},
 			}
 			st.Setup(t)
