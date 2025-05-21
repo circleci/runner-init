@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 	"sync/atomic"
 	"syscall"
 )
@@ -106,17 +105,7 @@ func newCmd(ctx context.Context, argv []string, user string, stderrSaver *prefix
 	//#nosec:G204 // this is intentionally setting up a command
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 
-	for _, env := range os.Environ() {
-		if strings.HasPrefix(env, "CIRCLECI_GOAT") {
-			// Prevent internal configuration from being injected in the command environment
-			continue
-		}
-		cmd.Env = append(cmd.Env, env)
-	}
-	if env != nil {
-		cmd.Env = append(cmd.Env, env...)
-	}
-
+	cmd.Env = Environ(env...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = io.MultiWriter(os.Stderr, stderrSaver)
 

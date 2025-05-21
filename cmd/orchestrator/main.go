@@ -19,6 +19,7 @@ import (
 	"github.com/circleci/runner-init/cmd/setup"
 	initialize "github.com/circleci/runner-init/init"
 	"github.com/circleci/runner-init/task"
+	"github.com/circleci/runner-init/task/entrypoint"
 	"github.com/circleci/runner-init/task/taskerrors"
 )
 
@@ -39,6 +40,7 @@ type initCmd struct {
 type runTaskCmd struct {
 	TerminationGracePeriod time.Duration `default:"10s" help:"How long the agent will wait for the task to complete if interrupted."`
 	HealthCheckAddr        string        `default:":7623" help:"Address for the health check API to listen on."`
+	EntrypointOverride     []string      `hidden:"true"`
 
 	// Task environment configuration should be injected through a Kubernetes Secret
 	Config task.Config `required:"" hidden:"-"`
@@ -102,8 +104,12 @@ func run(version, date string) (err error) {
 	return sys.Run(ctx, cli.ShutdownDelay)
 }
 
-func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (*task.Orchestrator, error) {
+func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (Runner, error) {
 	c := cli.RunTask
+
+	if len(c.EntrypointOverride) > 0 && os.Getpid() == 1 {
+		return entrypoint.New(c.EntrypointOverride), nil
+	}
 
 	// Strip the orchestrator configuration from the environment
 	_ = os.Unsetenv("CIRCLECI_GOAT_CONFIG")
@@ -129,4 +135,8 @@ func runSetup(ctx context.Context, cli cli, version string, sys *system.System) 
 	}
 
 	return o, nil
+}
+
+type Runner interface {
+	Run(ctx context.Context) error
 }
