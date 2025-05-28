@@ -2,6 +2,7 @@ Name,License
 github.com/DataDog/datadog-go/statsd,MIT
 github.com/alecthomas/kong,MIT
 github.com/cenkalti/backoff/v4,MIT
+github.com/cenkalti/backoff/v5,MIT
 github.com/circleci/ex,MIT
 github.com/circleci/runner-init,Apache-2.0
 github.com/facebookgo/clock,MIT
