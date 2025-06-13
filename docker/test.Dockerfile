@@ -1,4 +1,4 @@
-FROM scratch as builder
+FROM scratch AS builder
 
 ARG TARGETPLATFORM
 
