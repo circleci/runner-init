@@ -11,8 +11,11 @@ builds:
       - -X github.com/circleci/runner-init/cmd.Version={{.Env.BUILD_VERSION}}
       - -X github.com/circleci/runner-init/cmd.Date={{.Date}}
     env: [CGO_ENABLED=0]
-    goos: [linux]
+    goos: [linux, windows]
     goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
     no_unique_dist_dir: true
 
   - id: fake-task-agent
