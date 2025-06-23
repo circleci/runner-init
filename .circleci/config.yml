@@ -79,6 +79,7 @@ workflows:
 jobs:
   lint:
     executor: go
+    resource_class: circleci-runner/dbre-runner
     steps:
       - setup
       - with-go-cache:
