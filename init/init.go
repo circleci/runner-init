@@ -5,26 +5,37 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
-// Run function performs the copying of specific files and symlink creation
+// Run function performs the copying of the orchestrator and task-agent binaries
 func Run(srcDir, destDir string) error {
 	// Copy the orchestrator binary
-	orchestratorSrc := filepath.Join(srcDir, "orchestrator")
-	orchestratorDest := filepath.Join(destDir, "orchestrator")
+	orchestratorSrc := filepath.Join(srcDir, binOrchestrator)
+	orchestratorDest := filepath.Join(destDir, binOrchestrator)
 	if err := copyFile(orchestratorSrc, orchestratorDest); err != nil {
 		return err
 	}
 
 	// Copy the task agent binary
-	agentSrc := filepath.Join(srcDir, "circleci-agent")
-	agentDest := filepath.Join(destDir, "circleci-agent")
+	agentSrc := filepath.Join(srcDir, binCircleciAgent)
+	agentDest := filepath.Join(destDir, binCircleciAgent)
 	if err := copyFile(agentSrc, agentDest); err != nil {
 		return err
 	}
-	// Create symbolic link from "circleci-agent" to "circleci"
-	if err := os.Symlink(agentDest, filepath.Join(destDir, "circleci")); err != nil {
-		return err
+
+	circleciDest := filepath.Join(destDir, binCircleci)
+	if runtime.GOOS != "windows" {
+		// Create symbolic link from "circleci-agent" to "circleci"
+		if err := os.Symlink(agentDest, circleciDest); err != nil {
+			return err
+		}
+	} else {
+		// We copy the binary instead of creating a symlink to `circleci` as we do on Linux,
+		// since we do not have the necessary privileges to create symlinks to the shared volume on Windows.
+		if err := copyFile(agentSrc, circleciDest); err != nil {
+			return err
+		}
 	}
 
 	return nil

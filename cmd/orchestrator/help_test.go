@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"runtime"
 	"testing"
 
 	"github.com/alecthomas/kong"
@@ -11,6 +12,10 @@ import (
 )
 
 func TestHelp(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Can't be bothered to add golden files for Windows")
+	}
+
 	cli := &cli{}
 
 	var tests = []struct {

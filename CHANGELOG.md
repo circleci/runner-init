@@ -12,6 +12,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 - [#133](https://github.com/circleci/runner-init/pull/133) Don't re-handle task errors. If GOAT handles a task error (either with an infra-fail or retry), don't exit with a nonzero status code. Doing so causes container agent to overwrite the original error message in the UI.
 - [#98](https://github.com/circleci/runner-init/pull/98) [INTERNAL] A small refactor to the builds and Dockerfiles in preparation for adding Windows support.
+- [#96](https://github.com/circleci/runner-init/pull/96) [INTERNAL] Introduce initial support for Windows containers. Additional follow-up work is needed to fully support Windows, including the implementation of a smoke test and supporting service containers on Windows, which is a known limitation at this time.
 - [#97](https://github.com/circleci/runner-init/pull/97) Add timeout for the "wait-for-readiness" check on startup. This is so that GOAT doesn't wait indefinitely if there's a problem, ensuring a timely reaping of the task pod.
 - [#89](https://github.com/circleci/runner-init/pull/89) [INTERNAL] Add an option to wait for a readiness file, which is used via a shared volume to signal the readiness of all containers in the task pod.
 - [#71](https://github.com/circleci/runner-init/pull/71) [INTERNAL] Bump `ex` to `v1.0.12715-ada3e6b` and Go to `1.23`, which also required a bump in `golangci-lint` to `1.62.0` and addressing new lint errors that came along with that.

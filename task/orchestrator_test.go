@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/internal/testing/fakerunnerapi"
+	helpers "github.com/circleci/runner-init/task/internal/testing"
 )
 
 var testOnce sync.Once
@@ -39,9 +41,7 @@ func TestOrchestrator(t *testing.T) {
 	})
 
 	// Re-parent any child processes to us to simulate the orchestrator being init
-	const PrSetChildSubreaper = 36
-	_, _, err := syscall.Syscall(syscall.SYS_PRCTL, PrSetChildSubreaper, uintptr(1), 0)
-	assert.Check(t, err == 0)
+	helpers.ReparentChildren(t)
 
 	testPath := os.Args[0]
 	scratchDir := t.TempDir()
@@ -75,13 +75,15 @@ func TestOrchestrator(t *testing.T) {
 		{
 			name: "custom entrypoint",
 			config: Config{
-				Cmd:           []string{"/bin/sh", "-c", fmt.Sprintf("touch %s/testfile", scratchDir)},
+				Cmd: []string{
+					shell(t), "-c", fmt.Sprintf("touch %s", filepath.ToSlash(filepath.Join(scratchDir, "testfile"))),
+				},
 				Token:         "testtoken",
 				TaskAgentPath: testPath + " -test.run=TestOrchestrator",
 			},
 			extraChecks: []func(t *testing.T){
 				func(t *testing.T) {
-					_, err := os.Stat(scratchDir + "/testfile")
+					_, err := os.Stat(filepath.Join(scratchDir, "/testfile"))
 					assert.NilError(t, err, "expected custom entrypoint to create file")
 				},
 			},
@@ -97,11 +99,11 @@ func TestOrchestrator(t *testing.T) {
 			name:   "zombie processes are reaped",
 			config: defaultConfig,
 			env: map[string]string{
-				"SIMULATE_A_ZOMBIE_PROCESS": scratchDir + "/task.pid",
+				"SIMULATE_A_ZOMBIE_PROCESS": filepath.ToSlash(filepath.Join(scratchDir, "task.pid")),
 			},
 			extraChecks: []func(t *testing.T){
 				func(t *testing.T) {
-					b, err := os.ReadFile(scratchDir + "/task.pid") //nolint:gosec // this is a test
+					b, err := os.ReadFile(filepath.Join(scratchDir, "task.pid")) //nolint:gosec // this is a test
 					assert.NilError(t, err)
 
 					pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
@@ -110,10 +112,14 @@ func TestOrchestrator(t *testing.T) {
 					time.Sleep(500 * time.Millisecond)
 
 					p, err := os.FindProcess(pid)
-					assert.NilError(t, err)
+					if runtime.GOOS == "windows" {
+						assert.Check(t, cmp.Nil(p))
+					} else {
+						assert.NilError(t, err)
 
-					err = p.Signal(syscall.Signal(0))
-					assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
+						err = p.Signal(syscall.Signal(0))
+						assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
+					}
 				},
 			},
 		},
@@ -228,8 +234,8 @@ func TestOrchestrator(t *testing.T) {
 					TimestampMilli: time.Now().UnixMilli(),
 					Message: []byte("error while executing task agent: " +
 						"failed to start task agent command: " +
-						"exec: thiswontstart: executable file not found in $PATH: " +
-						"Check container logs for more details"),
+						"exec: thiswontstart: executable file not found in " + pathEnv(t) +
+						": Check container logs for more details"),
 				},
 			},
 		},
@@ -293,7 +299,8 @@ func TestOrchestrator_waitForReadiness(t *testing.T) {
 		o := Orchestrator{}
 		o.config.ReadinessFilePath = filepath.Join(t.TempDir(), "ready")
 
-		_, err := os.Create(o.config.ReadinessFilePath)
+		f, err := os.Create(o.config.ReadinessFilePath)
+		t.Cleanup(func() { assert.NilError(t, f.Close()) })
 		assert.NilError(t, err)
 
 		err = o.waitForReadiness(ctx)
@@ -309,7 +316,8 @@ func TestOrchestrator_waitForReadiness(t *testing.T) {
 
 		go func() {
 			time.Sleep(250 * time.Millisecond)
-			_, err := os.Create(o.config.ReadinessFilePath)
+			f, err := os.Create(o.config.ReadinessFilePath)
+			t.Cleanup(func() { assert.NilError(t, f.Close()) })
 			assert.NilError(t, err)
 		}()
 
@@ -355,7 +363,27 @@ func beFakeTaskAgent(t *testing.T) {
 	}
 
 	if pidfile := os.Getenv("SIMULATE_A_ZOMBIE_PROCESS"); pidfile != "" {
-		c := exec.Command("/bin/sh", "-c", "echo $$ >"+pidfile+" && sleep 300") //nolint:gosec // this is a test
+		c := exec.Command(shell(t), "-c", "echo $$ >"+pidfile+" && sleep 300") //nolint:gosec // this is a test
 		assert.NilError(t, c.Start())
 	}
+
+	os.Exit(0)
+}
+
+func shell(t *testing.T) string {
+	t.Helper()
+
+	if runtime.GOOS == "windows" {
+		return "bash.exe"
+	}
+	return "/bin/sh"
+}
+
+func pathEnv(t *testing.T) string {
+	t.Helper()
+
+	if runtime.GOOS == "windows" {
+		return "%PATH%"
+	}
+	return "$PATH"
 }
