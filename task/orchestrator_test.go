@@ -19,6 +19,7 @@ import (
 	"github.com/circleci/ex/testing/testcontext"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/poll"
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/internal/testing/fakerunnerapi"
@@ -109,17 +110,23 @@ func TestOrchestrator(t *testing.T) {
 					pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
 					assert.NilError(t, err)
 
-					time.Sleep(500 * time.Millisecond)
+					check := func(poll.LogT) poll.Result {
+						p, err := os.FindProcess(pid)
+						if runtime.GOOS == "windows" {
+							assert.Check(t, cmp.Nil(p))
+						} else {
+							assert.NilError(t, err)
 
-					p, err := os.FindProcess(pid)
-					if runtime.GOOS == "windows" {
-						assert.Check(t, cmp.Nil(p))
-					} else {
-						assert.NilError(t, err)
+							err = p.Signal(syscall.Signal(0))
+							assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
+						}
 
-						err = p.Signal(syscall.Signal(0))
-						assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
+						if t.Failed() {
+							return poll.Continue("process checks failed")
+						}
+						return poll.Success()
 					}
+					poll.WaitOn(t, check, poll.WithTimeout(20*time.Second))
 				},
 			},
 		},
