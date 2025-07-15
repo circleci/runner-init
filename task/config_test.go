@@ -93,7 +93,7 @@ func Test_Agent(t *testing.T) {
 	}
 
 	expectedEnv := []string{
-		fmt.Sprintf("PATH=%s:%s", os.Getenv("PATH"), filepath.Dir("/path/to/agent")),
+		fmt.Sprintf("PATH=%s%c%s", os.Getenv("PATH"), os.PathListSeparator, filepath.Dir("/path/to/agent")),
 	}
 
 	expectedAgent := Agent{
