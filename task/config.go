@@ -62,7 +62,8 @@ func (c *Config) Agent() Agent {
 
 	cmd := append(strings.Split(c.TaskAgentPath, " "), args...)
 
-	env := []string{fmt.Sprintf("PATH=%s:%s", os.Getenv("PATH"), filepath.Dir(c.TaskAgentPath))}
+	env := []string{fmt.Sprintf("PATH=%s%c%s",
+		os.Getenv("PATH"), os.PathListSeparator, filepath.Dir(c.TaskAgentPath))}
 
 	return Agent{
 		Cmd: cmd,

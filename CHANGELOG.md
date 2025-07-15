@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#197](https://github.com/circleci/runner-init/pull/197) Fix `%PATH%` on Windows by using the OS-specific path list separator.
 - [#133](https://github.com/circleci/runner-init/pull/133) Don't re-handle task errors. If GOAT handles a task error (either with an infra-fail or retry), don't exit with a nonzero status code. Doing so causes container agent to overwrite the original error message in the UI.
 - [#98](https://github.com/circleci/runner-init/pull/98) [INTERNAL] A small refactor to the builds and Dockerfiles in preparation for adding Windows support.
 - [#96](https://github.com/circleci/runner-init/pull/96) [INTERNAL] Introduce initial support for Windows containers. Additional follow-up work is needed to fully support Windows, including the implementation of a smoke test and supporting service containers on Windows, which is a known limitation at this time.
