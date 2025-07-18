@@ -144,7 +144,7 @@ func (o *Orchestrator) waitForReadiness(ctx context.Context) (err error) {
 	for {
 		select {
 		case event, ok := <-watcher.Events:
-			if ok && event.Has(fsnotify.Create) && event.Name == readinessFilePath {
+			if ok && event.Has(fsnotify.Create) && filepath.Base(event.Name) == filepath.Base(readinessFilePath) {
 				return nil
 			}
 		case err, ok := <-watcher.Errors:
