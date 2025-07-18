@@ -319,7 +319,8 @@ func TestOrchestrator_waitForReadiness(t *testing.T) {
 		defer cancel()
 
 		o := Orchestrator{}
-		o.config.ReadinessFilePath = filepath.Join(t.TempDir(), "ready")
+		// Test a slash-separated path to ensure the readiness check handles it across different platforms
+		o.config.ReadinessFilePath = filepath.ToSlash(filepath.Join(t.TempDir(), "ready"))
 
 		go func() {
 			time.Sleep(250 * time.Millisecond)
