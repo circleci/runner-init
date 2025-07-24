@@ -76,7 +76,10 @@ workflows:
         - equal: [ nightly, << pipeline.schedule.name >> ]
         - equal: [ true, << pipeline.parameters.trigger_nightly_workflow >> ]
     jobs:
-      - test
+      - test:
+          matrix:
+            parameters:
+              os: [ go, windows ]
       - build
       - scan:
           context: [ org-global ]
