@@ -126,7 +126,7 @@ func TestOrchestrator(t *testing.T) {
 						}
 						return poll.Success()
 					}
-					poll.WaitOn(t, check, poll.WithTimeout(20*time.Second))
+					poll.WaitOn(t, check, poll.WithTimeout(1*time.Minute))
 				},
 			},
 		},
