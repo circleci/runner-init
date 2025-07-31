@@ -32,6 +32,15 @@ Under this setup, container agent provisions the task Pod with an ephemeral volu
 
 When the primary task container starts, GOAT runs as PID 1, executing the task agent process and any custom entrypoint specified in the CircleCI job config as a child process. GOAT manages init-like tasks, including handling signals to the container and performing process cleanup/reaping. On task completion, GOAT exits cleanly, causing the container to terminate and enabling container agent to clean up the Pod accordingly.
 
+## Supported Platforms
+
+The `runner-init` image and GOAT support the following Kubernetes container platforms:
+
+| Platform | Architecture | Notes                                                                                                                                                                        |
+|----------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Linux | amd64, arm64 | Full support for standard Linux containers on both x86-64 and ARM architectures                                                                                              |
+| Windows | amd64 | **Preview** - Windows container support for x86-64 architecture. See [Windows container runner documentation](https://circleci.com/docs/container-runner/#windows) for setup |
+
 ## Project Layout
 
 The `runner-init` project includes several key directories:
