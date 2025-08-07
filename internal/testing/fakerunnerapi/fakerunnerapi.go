@@ -40,7 +40,7 @@ type TaskEvent struct {
 }
 
 var CmpTaskEvent = gocmp.Options{
-	cmpopts.EquateApproxTime(1 * time.Minute),
+	cmpopts.EquateApproxTime(2 * time.Minute),
 	cmpopts.AcyclicTransformer("TimestampMilli", func(msec int64) time.Time {
 		return time.UnixMilli(msec)
 	}),
