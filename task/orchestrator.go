@@ -72,7 +72,7 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 	if len(o.config.ReadinessFilePath) > 0 {
 		// Wait for readiness from the other containers before starting the task agent process
 		if err := o.waitForReadiness(ctx); err != nil {
-			return err
+			return taskerrors.RetryableErrorf("error waiting for service containers to become ready: %w", err)
 		}
 	}
 
@@ -120,7 +120,7 @@ func (o *Orchestrator) waitForReadiness(ctx context.Context) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, waitForReadinessTimeout) // so we don't wait indefinitely if there's a problem
 	defer cancel()
 
-	watcher, err := fsnotify.NewWatcher()
+	watcher, err := fsnotify.NewBufferedWatcher(100) // use a buffered chan to prevent a possible race condition
 	if err != nil {
 		return err
 	}
