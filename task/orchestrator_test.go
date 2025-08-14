@@ -59,6 +59,7 @@ func TestOrchestrator(t *testing.T) {
 		gracePeriod     time.Duration
 		timeout         time.Duration
 		additionalTasks []fakerunnerapi.Task
+		cleanup         func()
 
 		wantError        string
 		wantTimeout      bool
@@ -197,6 +198,32 @@ func TestOrchestrator(t *testing.T) {
 			},
 		},
 		{
+			name: "retryable error: service containers didn't become ready in time",
+			config: func() Config {
+				waitForReadinessTimeout = 1 * time.Millisecond
+				c := defaultConfig
+				c.ReadinessFilePath = "does-not-exist"
+				return c
+			}(),
+			cleanup: func() {
+				waitForReadinessTimeout = 10 * time.Minute
+			},
+			wantError: "error waiting for service containers to become ready: context deadline exceeded",
+			wantTaskUnclaims: []fakerunnerapi.TaskUnclaim{
+				{
+					Token: "testtoken",
+				},
+			},
+			wantTaskEvents: []fakerunnerapi.TaskEvent{
+				{
+					Allocation:     defaultConfig.Allocation,
+					TimestampMilli: time.Now().UnixMilli(),
+					Message: []byte("error waiting for service containers to become ready: context deadline exceeded: " +
+						"Check container logs for more details"),
+				},
+			},
+		},
+		{
 			name: "retryable error: an unsafe retry",
 			config: Config{
 				TaskID:              "retry",
@@ -251,6 +278,10 @@ func TestOrchestrator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("BE_TASK_AGENT", "true")
+
+			if tt.cleanup != nil {
+				t.Cleanup(tt.cleanup)
+			}
 
 			for k, v := range tt.env {
 				t.Setenv(k, v)
