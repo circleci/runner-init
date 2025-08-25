@@ -33,7 +33,7 @@ func New(ctx context.Context, cmd []string, forwardSignals bool, user string, en
 func (c *Command) Start() error {
 	cmd := c.cmd
 
-	if err := cmd.Start(); err != nil {
+	if err := c.start(); err != nil {
 		return err
 	}
 
