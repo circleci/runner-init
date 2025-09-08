@@ -49,3 +49,7 @@ func additionalSetup(_ context.Context, cmd *exec.Cmd) {
 		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 	}
 }
+
+func (c *Command) start() error {
+	return c.cmd.Start()
+}
