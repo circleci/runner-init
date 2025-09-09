@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#212](https://github.com/circleci/runner-init/pull/212) Fix child process cleanup on Windows using job objects. This ensures that child processes are destroyed when the parent process (task-agent) terminates.
 - [#197](https://github.com/circleci/runner-init/pull/197) Fix `%PATH%` on Windows by using the OS-specific path list separator.
 - [#133](https://github.com/circleci/runner-init/pull/133) Don't re-handle task errors. If GOAT handles a task error (either with an infra-fail or retry), don't exit with a nonzero status code. Doing so causes container agent to overwrite the original error message in the UI.
 - [#98](https://github.com/circleci/runner-init/pull/98) [INTERNAL] A small refactor to the builds and Dockerfiles in preparation for adding Windows support.

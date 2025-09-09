@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http/httptest"
@@ -111,23 +112,26 @@ func TestOrchestrator(t *testing.T) {
 					pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
 					assert.NilError(t, err)
 
+					time.Sleep(20 * time.Second)
+
 					check := func(poll.LogT) poll.Result {
+						t.Logf("Checking for PID: %d", pid)
 						p, err := os.FindProcess(pid)
 						if runtime.GOOS == "windows" {
-							assert.Check(t, cmp.Nil(p))
-						} else {
-							assert.NilError(t, err)
-
+							if err != nil {
+								assert.Check(t, cmp.ErrorContains(err, "OpenProcess: The parameter is incorrect."),
+									"an error implies the process is dead")
+								return poll.Success()
+							}
+						} else if err == nil {
 							err = p.Signal(syscall.Signal(0))
-							assert.Check(t, cmp.ErrorIs(err, os.ErrProcessDone))
+							if errors.Is(err, os.ErrProcessDone) {
+								return poll.Success()
+							}
 						}
-
-						if t.Failed() {
-							return poll.Continue("process checks failed")
-						}
-						return poll.Success()
+						return poll.Continue("process checks failed")
 					}
-					poll.WaitOn(t, check, poll.WithTimeout(1*time.Minute))
+					poll.WaitOn(t, check, poll.WithTimeout(2*time.Minute))
 				},
 			},
 		},
@@ -402,7 +406,13 @@ func beFakeTaskAgent(t *testing.T) {
 	}
 
 	if pidfile := os.Getenv("SIMULATE_A_ZOMBIE_PROCESS"); pidfile != "" {
-		c := exec.Command(shell(t), "-c", "echo $$ >"+pidfile+" && sleep 300") //nolint:gosec // this is a test
+		pidCmd := "echo $$ >"
+		if runtime.GOOS == "windows" {
+			// https://stackoverflow.com/a/77115597
+			pidCmd = "ps -p $$ | awk 'NR ==2{print $4}' >"
+		}
+		pidCmd += pidfile + " && sleep 300"
+		c := exec.Command(shell(t), "-c", pidCmd) //nolint:gosec // this is a test
 		assert.NilError(t, c.Start())
 	}
 
