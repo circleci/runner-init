@@ -132,7 +132,6 @@ jobs:
         type: string
     executor: << parameters.os >>
     steps:
-      - setup
       - when:
           condition:
             equal: [ << parameters.os >>, "windows" ]
@@ -140,10 +139,11 @@ jobs:
             - run:
                 name: "Install GCC, since we need cgo for the race detector"
                 command: |
-                  choco install mingw -y
+                  choco install mingw --version=15.1.0 -y
                   echo 'export PATH="$PATH:/c/ProgramData/mingw64/mingw64/bin"' >> ~/.bash_profile
                   source ~/.bash_profile
                   gcc -v
+      - setup
       - with-go-cache:
           steps:
             - run: ./do test ./... -count 2
