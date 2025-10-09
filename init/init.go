@@ -1,26 +1,34 @@
 package init
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/circleci/ex/o11y"
 )
 
 // Run function performs the copying of the orchestrator and task-agent binaries
-func Run(srcDir, destDir string) error {
+func Run(ctx context.Context, srcDir, destDir string) (err error) {
+	ctx, span := o11y.StartSpan(ctx, "orchestrator: init")
+	defer o11y.End(span, &err)
+
+	span.RecordMetric(o11y.Timing("init.duration"))
+
 	// Copy the orchestrator binary
 	orchestratorSrc := filepath.Join(srcDir, binOrchestrator)
 	orchestratorDest := filepath.Join(destDir, binOrchestrator)
-	if err := copyFile(orchestratorSrc, orchestratorDest); err != nil {
+	if err := copyFile(ctx, orchestratorSrc, orchestratorDest); err != nil {
 		return err
 	}
 
 	// Copy the task agent binary
 	agentSrc := filepath.Join(srcDir, binCircleciAgent)
 	agentDest := filepath.Join(destDir, binCircleciAgent)
-	if err := copyFile(agentSrc, agentDest); err != nil {
+	if err := copyFile(ctx, agentSrc, agentDest); err != nil {
 		return err
 	}
 
@@ -33,7 +41,7 @@ func Run(srcDir, destDir string) error {
 	} else {
 		// We copy the binary instead of creating a symlink to `circleci` as we do on Linux,
 		// since we do not have the necessary privileges to create symlinks to the shared volume on Windows.
-		if err := copyFile(agentSrc, circleciDest); err != nil {
+		if err := copyFile(ctx, agentSrc, circleciDest); err != nil {
 			return err
 		}
 	}
@@ -41,7 +49,13 @@ func Run(srcDir, destDir string) error {
 	return nil
 }
 
-func copyFile(srcPath, destPath string) (err error) {
+func copyFile(ctx context.Context, srcPath, destPath string) (err error) {
+	_, span := o11y.StartSpan(ctx, "orchestrator: init: copy")
+	defer o11y.End(span, &err)
+
+	span.AddField("binary", filepath.Base(srcPath))
+	span.RecordMetric(o11y.Timing("init.copy.duration"))
+
 	closeFile := func(f *os.File) {
 		err = errors.Join(err, f.Close())
 	}
