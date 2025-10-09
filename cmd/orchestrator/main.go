@@ -84,7 +84,7 @@ func run(version, date string) (err error) {
 		c := cli.Init
 		sys.AddService(func(_ context.Context) error {
 			defer cancel()
-			return initialize.Run(c.Source, c.Destination)
+			return initialize.Run(ctx, c.Source, c.Destination)
 		})
 
 	case "run-task":
