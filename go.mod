@@ -2,7 +2,7 @@ module github.com/circleci/runner-init
 
 go 1.24.0
 
-toolchain go1.24.7
+toolchain go1.25.3
 
 require (
 	github.com/alecthomas/kong v1.12.1
