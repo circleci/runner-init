@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/circleci/ex/testing/testcontext"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )
@@ -18,9 +19,10 @@ func TestRun(t *testing.T) {
 	agentSrc := filepath.Join(srcDir, binCircleciAgent)
 	agentDest := filepath.Join(destDir, binCircleciAgent)
 	circleciDest := filepath.Join(destDir, binCircleci)
+	ctx := testcontext.Background()
 
 	t.Run("Copy files and create symlink", func(t *testing.T) {
-		err := Run(srcDir, destDir)
+		err := Run(ctx, srcDir, destDir)
 		assert.NilError(t, err)
 
 		assertFileIsCopied(t, orchSrc, orchDest)
@@ -36,7 +38,7 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("Fail when source files not present", func(t *testing.T) {
-		err := Run(srcDir, "non-existent-dir")
+		err := Run(ctx, srcDir, "non-existent-dir")
 		if runtime.GOOS == "windows" {
 			assert.Check(t, cmp.ErrorContains(err, "The system cannot find the path specified"))
 		} else {
