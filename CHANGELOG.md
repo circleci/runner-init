@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#174](https://github.com/circleci/runner-init/pull/174) Add support for a custom entrypoint override.
 - [#224](https://github.com/circleci/runner-init/pull/224) Record and log timings in orchestrator init function.
 - [#212](https://github.com/circleci/runner-init/pull/212) Fix child process cleanup on Windows using job objects. This ensures that child processes are destroyed when the parent process (task-agent) terminates.
 - [#197](https://github.com/circleci/runner-init/pull/197) Fix `%PATH%` on Windows by using the OS-specific path list separator.
