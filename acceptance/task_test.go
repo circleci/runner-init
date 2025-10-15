@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -58,6 +59,10 @@ func TestRunTask(t *testing.T) {
 	})
 
 	t.Run("Good entrypoint override", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on Windows")
+		}
+
 		entrypointPath := filepath.ToSlash(filepath.Join(t.TempDir(), "entrypoint.sh"))
 
 		//nolint:gosec
