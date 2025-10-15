@@ -21,9 +21,9 @@ func (e Entrypoint) Run(ctx context.Context) (err error) {
 	_, span := o11y.StartSpan(ctx, "override-entrypoint")
 	defer o11y.End(span, &err)
 
-	args := os.Args
+	args := append([]string{e.args[0]}, os.Args[0], "run-task")
 	if len(e.args) > 1 {
-		args = append(e.args[1:], os.Args[0], "run-task")
+		args = append(args, e.args[1:]...)
 	}
 
 	//#nosec:G204 // this is intentionally setting up a command
