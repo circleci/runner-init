@@ -26,8 +26,9 @@ import (
 type cli struct {
 	Version kong.VersionFlag `short:"v" help:"Print version information and quit."`
 
-	Init    initCmd    `cmd:"" name:"init" default:"withargs"`
-	RunTask runTaskCmd `cmd:"" name:"run-task"`
+	Init     initCmd     `cmd:"" name:"init" default:"withargs"`
+	Override overrideCmd `cmd:"" name:"override"`
+	RunTask  runTaskCmd  `cmd:"" name:"run-task"`
 
 	ShutdownDelay time.Duration `default:"0s" help:"Delay shutdown by this amount."`
 }
@@ -37,10 +38,15 @@ type initCmd struct {
 	Destination string `arg:"" env:"DESTINATION" type:"path" default:"/opt/circleci/bin" help:"Path where to copy the agent binaries to."`
 }
 
+type overrideCmd struct {
+	Entrypoint []string `help:"Alternative entrypoint to run instead of GOAT. Must bootstrap GOAT."`
+
+	runTaskCmd
+}
+
 type runTaskCmd struct {
 	TerminationGracePeriod time.Duration `default:"10s" help:"How long the agent will wait for the task to complete if interrupted."`
 	HealthCheckAddr        string        `default:":7623" help:"Address for the health check API to listen on."`
-	EntrypointOverride     []string      `hidden:"true"`
 
 	// Task environment configuration should be injected through a Kubernetes Secret
 	Config task.Config `required:"" hidden:"-"`
@@ -89,6 +95,13 @@ func run(version, date string) (err error) {
 			return initialize.Run(ctx, c.Source, c.Destination)
 		})
 
+	case "override":
+		ep := entrypoint.New(cli.Override.Entrypoint)
+		sys.AddService(func(ctx context.Context) error {
+			defer cancel()
+			return ep.Run(ctx)
+		})
+
 	case "run-task":
 		orchestrator, err := runSetup(ctx, cli, version, sys)
 		if err != nil {
@@ -106,11 +119,6 @@ func run(version, date string) (err error) {
 
 func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (Runner, error) {
 	c := cli.RunTask
-
-	if len(c.EntrypointOverride) > 0 && os.Getpid() == 1 {
-		return entrypoint.New(c.EntrypointOverride), nil
-	}
-
 	// Strip the orchestrator configuration from the environment
 	_ = os.Unsetenv("CIRCLECI_GOAT_CONFIG")
 

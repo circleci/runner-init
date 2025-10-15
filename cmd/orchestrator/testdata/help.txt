@@ -10,6 +10,8 @@ Flags:
 Commands:
   init [<source> [<destination>]] [flags]
 
+  override [flags]
+
   run-task [flags]
 
 Run "test-app <command> --help" for more information on a command.
