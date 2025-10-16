@@ -39,7 +39,7 @@ type initCmd struct {
 }
 
 type overrideCmd struct {
-	Entrypoint []string `help:"Alternative entrypoint to run instead of GOAT. Must bootstrap GOAT."`
+	Entrypoint []string `help:"Custom init process to execute as PID 1, overriding orchestrator. Must accept and execute the orchestrator command/arguments (e.g., exec \"$@\"), propagate signals, and handle standard init responsibilities like reaping zombie processes."`
 
 	runTaskCmd
 }
