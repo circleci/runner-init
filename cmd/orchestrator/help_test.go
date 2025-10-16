@@ -35,6 +35,11 @@ func TestHelp(t *testing.T) {
 			wantFilename: "init.txt",
 		},
 		{
+			name:         "check override command help",
+			cli:          &cli.Override,
+			wantFilename: "override.txt",
+		},
+		{
 			name:         "check run-task command help",
 			cli:          &cli.RunTask,
 			wantFilename: "run-task.txt",

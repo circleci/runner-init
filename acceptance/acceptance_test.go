@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	orchestratorTestBinary        = os.Getenv("ORCHESTRATOR_TEST_BINARY")
-	orchestratorTestBinaryRunTask = ""
+	orchestratorTestBinary         = os.Getenv("ORCHESTRATOR_TEST_BINARY")
+	orchestratorTestBinaryRunTask  = ""
+	orchestratorTestBinaryOverride = ""
 
 	binariesPath    = ""
 	taskAgentBinary = ""
@@ -60,32 +61,35 @@ func runTests(m *testing.M) (int, error) {
 	fmt.Printf("Using 'orchestrator' test binary: %q\n", orchestratorTestBinary)
 	fmt.Printf("Using fake 'task-agent' test binary: %q\n", taskAgentBinary)
 
-	if err := createRunTaskScript(); err != nil {
+	if orchestratorTestBinaryRunTask, err = createRunnerScript("run-task"); err != nil {
 		return 0, err
 	}
 	fmt.Printf("Using 'orchestrator run-task' script: %q\n", orchestratorTestBinaryRunTask)
+
+	if orchestratorTestBinaryOverride, err = createRunnerScript("override"); err != nil {
+		return 0, err
+	}
+	fmt.Printf("Using 'orchestrator override' script: %q\n", orchestratorTestBinaryOverride)
 
 	return m.Run(), nil
 }
 
 // A little hack to get around limitations of the test runner on positional arguments
-func createRunTaskScript() error {
+func createRunnerScript(cmd string) (string, error) {
 	var script string
 	var scriptPath string
 
 	if runtime.GOOS == "windows" {
-		script = "@echo off\n" + orchestratorTestBinary + " run-task"
-		scriptPath = filepath.Join(binariesPath, "orchestratorRunTask.bat")
+		script = "@echo off\n" + orchestratorTestBinary + " " + cmd
+		scriptPath = filepath.Join(binariesPath, fmt.Sprintf("orchestrator-%s.bat", cmd))
 	} else {
-		script = "#!/bin/bash\nexec " + orchestratorTestBinary + " run-task"
-		scriptPath = filepath.Join(binariesPath, "orchestratorRunTask.sh")
+		script = "#!/bin/bash\nexec " + orchestratorTestBinary + " " + cmd
+		scriptPath = filepath.Join(binariesPath, fmt.Sprintf("orchestrator-%s.sh", cmd))
 	}
 
 	if err := os.WriteFile(scriptPath, []byte(script), 0750); err != nil { //nolint:gosec
-		return err
+		return "", err
 	}
 
-	orchestratorTestBinaryRunTask = scriptPath
-
-	return nil
+	return scriptPath, nil
 }
