@@ -19,14 +19,16 @@ import (
 	"github.com/circleci/runner-init/cmd/setup"
 	initialize "github.com/circleci/runner-init/init"
 	"github.com/circleci/runner-init/task"
+	"github.com/circleci/runner-init/task/entrypoint"
 	"github.com/circleci/runner-init/task/taskerrors"
 )
 
 type cli struct {
 	Version kong.VersionFlag `short:"v" help:"Print version information and quit."`
 
-	Init    initCmd    `cmd:"" name:"init" default:"withargs"`
-	RunTask runTaskCmd `cmd:"" name:"run-task"`
+	Init     initCmd     `cmd:"" name:"init" default:"withargs"`
+	Override overrideCmd `cmd:"" name:"override"`
+	RunTask  runTaskCmd  `cmd:"" name:"run-task"`
 
 	ShutdownDelay time.Duration `default:"0s" help:"Delay shutdown by this amount."`
 }
@@ -34,6 +36,12 @@ type cli struct {
 type initCmd struct {
 	Source      string `arg:"" env:"SOURCE" type:"path" default:"/" help:"Path where to copy the agent binaries from."`
 	Destination string `arg:"" env:"DESTINATION" type:"path" default:"/opt/circleci/bin" help:"Path where to copy the agent binaries to."`
+}
+
+type overrideCmd struct {
+	Entrypoint []string `help:"Custom init process to execute as PID 1, overriding orchestrator. Must accept and execute the orchestrator command/arguments (e.g., exec \"$@\"), propagate signals, and handle standard init responsibilities like reaping zombie processes."`
+
+	runTaskCmd
 }
 
 type runTaskCmd struct {
@@ -87,6 +95,13 @@ func run(version, date string) (err error) {
 			return initialize.Run(ctx, c.Source, c.Destination)
 		})
 
+	case "override":
+		ep := entrypoint.New(cli.Override.Entrypoint)
+		sys.AddService(func(ctx context.Context) error {
+			defer cancel()
+			return ep.Run(ctx)
+		})
+
 	case "run-task":
 		orchestrator, err := runSetup(ctx, cli, version, sys)
 		if err != nil {
@@ -102,9 +117,8 @@ func run(version, date string) (err error) {
 	return sys.Run(ctx, cli.ShutdownDelay)
 }
 
-func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (*task.Orchestrator, error) {
+func runSetup(ctx context.Context, cli cli, version string, sys *system.System) (Runner, error) {
 	c := cli.RunTask
-
 	// Strip the orchestrator configuration from the environment
 	_ = os.Unsetenv("CIRCLECI_GOAT_CONFIG")
 
@@ -129,4 +143,8 @@ func runSetup(ctx context.Context, cli cli, version string, sys *system.System) 
 	}
 
 	return o, nil
+}
+
+type Runner interface {
+	Run(ctx context.Context) error
 }

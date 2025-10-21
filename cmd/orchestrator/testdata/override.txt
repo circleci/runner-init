@@ -1,0 +1,16 @@
+Usage: test-app [flags]
+
+Flags:
+  -h, --help    Show context-sensitive help.
+      --entrypoint=ENTRYPOINT,...
+                Custom init process to execute as PID 1, overriding
+                orchestrator. Must accept and execute the orchestrator
+                command/arguments (e.g., exec "$@"), propagate signals,
+                and handle standard init responsibilities like reaping zombie
+                processes ($CIRCLECI_GOAT_ENTRYPOINT).
+      --termination-grace-period=10s
+                How long the agent will wait for the task to complete if
+                interrupted ($CIRCLECI_GOAT_TERMINATION_GRACE_PERIOD).
+      --health-check-addr=":7623"
+                Address for the health check API to listen on
+                ($CIRCLECI_GOAT_HEALTH_CHECK_ADDR).
