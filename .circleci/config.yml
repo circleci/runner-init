@@ -28,7 +28,7 @@ executors:
     resource_class: circleci-runner/rum-large
   windows:
     machine:
-      image: windows-server-2022-gui:current
+      image: windows-server-2022-gui:2025.05.1
       shell: bash.exe -login
     resource_class: windows.medium
   ccc:
