@@ -29,7 +29,7 @@ executors:
   windows:
     machine:
       image: windows-server-2022-gui:current
-      shell: bash.exe -login
+      shell: bash.exe --login -eo pipefail
     resource_class: windows.medium
   ccc:
     docker:
