@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
-	"sync"
-	"sync/atomic"
 	"unsafe"
 
 	"github.com/circleci/ex/o11y"
@@ -30,13 +29,16 @@ func switchUser(ctx context.Context, _ *exec.Cmd, user string) {
 }
 
 func additionalSetup(_ context.Context, cmd *exec.Cmd) {
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &windows.SysProcAttr{}
+	}
 	cmd.SysProcAttr.CreationFlags = windows.CREATE_NEW_PROCESS_GROUP
 }
 
 func (c *Command) start() error {
 	g, err := newProcessExitGroup()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create new process group: %w", err)
 	}
 
 	c.cmd.Cancel = func() error {
@@ -47,17 +49,11 @@ func (c *Command) start() error {
 		return err
 	}
 
-	return g.AddProcess(c.cmd.Process)
-}
+	if err := g.AddProcess(c.cmd.Process); err != nil {
+		return fmt.Errorf("failed to add process to group: %w", err)
+	}
 
-// Process struct matches os.Process layout to extract handle via unsafe pointer
-// https://stackoverflow.com/a/56739249
-type process struct {
-	Pid    int
-	_      uint8
-	_      atomic.Uint64
-	_      sync.RWMutex
-	Handle uintptr
+	return nil
 }
 
 type processExitGroup windows.Handle
@@ -89,7 +85,11 @@ func (g processExitGroup) Dispose() error {
 }
 
 func (g processExitGroup) AddProcess(p *os.Process) error {
-	return windows.AssignProcessToJobObject(
-		windows.Handle(g),
-		windows.Handle((*process)(unsafe.Pointer(p)).Handle))
+	handle, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE, false, uint32(p.Pid))
+	if err != nil {
+		return err
+	}
+	defer windows.CloseHandle(handle)
+
+	return windows.AssignProcessToJobObject(windows.Handle(g), handle)
 }
