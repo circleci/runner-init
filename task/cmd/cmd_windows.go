@@ -6,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"sync"
-	"sync/atomic"
 	"unsafe"
 
 	"github.com/circleci/ex/o11y"
@@ -31,6 +29,9 @@ func switchUser(ctx context.Context, _ *exec.Cmd, user string) {
 }
 
 func additionalSetup(_ context.Context, cmd *exec.Cmd) {
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &windows.SysProcAttr{}
+	}
 	cmd.SysProcAttr.CreationFlags = windows.CREATE_NEW_PROCESS_GROUP
 }
 
@@ -53,16 +54,6 @@ func (c *Command) start() error {
 	}
 
 	return nil
-}
-
-// Process struct matches os.Process layout to extract handle via unsafe pointer
-// https://stackoverflow.com/a/56739249
-type process struct {
-	Pid    int
-	_      uint8
-	_      atomic.Uint64
-	_      sync.RWMutex
-	Handle uintptr
 }
 
 type processExitGroup windows.Handle
@@ -94,7 +85,11 @@ func (g processExitGroup) Dispose() error {
 }
 
 func (g processExitGroup) AddProcess(p *os.Process) error {
-	return windows.AssignProcessToJobObject(
-		windows.Handle(g),
-		windows.Handle((*process)(unsafe.Pointer(p)).Handle))
+	handle, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE, false, uint32(p.Pid))
+	if err != nil {
+		return err
+	}
+	defer windows.CloseHandle(handle)
+
+	return windows.AssignProcessToJobObject(windows.Handle(g), handle)
 }
