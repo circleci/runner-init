@@ -30,7 +30,7 @@ executors:
     machine:
       image: windows-server-2022-gui:current
       shell: bash.exe --login -eo pipefail
-    resource_class: windows.medium
+    resource_class: windows.large
   ccc:
     docker:
       - image: circleci/command-convenience:0.1
@@ -146,7 +146,7 @@ jobs:
       - setup
       - with-go-cache:
           steps:
-            - run: ./do test ./... -count 2
+            - run: ./do test ./...
       - notify_failing_main
 
   build:

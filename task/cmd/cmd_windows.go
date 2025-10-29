@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -36,7 +37,7 @@ func additionalSetup(_ context.Context, cmd *exec.Cmd) {
 func (c *Command) start() error {
 	g, err := newProcessExitGroup()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create new process group: %w", err)
 	}
 
 	c.cmd.Cancel = func() error {
@@ -47,7 +48,11 @@ func (c *Command) start() error {
 		return err
 	}
 
-	return g.AddProcess(c.cmd.Process)
+	if err := g.AddProcess(c.cmd.Process); err != nil {
+		return fmt.Errorf("failed to add process to group: %w", err)
+	}
+
+	return nil
 }
 
 // Process struct matches os.Process layout to extract handle via unsafe pointer
