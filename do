@@ -51,15 +51,14 @@ images() {
 # shellcheck disable=SC2034
 help_images_for_server="Build and push the Docker images and manifests for supported server versions."
 images-for-server() {
-    MAJOR_SERVER_VERSION=4
-    MINOR_VERSION_START=7
-    MINOR_VERSION_END=9
+    versions_array=(4.8 4.9 5.0)
+    last_version="${versions_array[-1]}"
 
-    for minor in $(seq ${MINOR_VERSION_START} ${MINOR_VERSION_END}); do
-        if [ "${minor}" -eq "${MINOR_VERSION_END}" ]; then
+    for version in "${versions_array[@]}"; do
+        if [ "${version}" = "${last_version}" ]; then
             branch="main"
         else
-            branch="server-${MAJOR_SERVER_VERSION}.${minor}"
+            branch="server-${version}"
         fi
 
         git -C "${SERVER_REPO_PATH:?'server repo path required'}" checkout "${branch}"
@@ -68,7 +67,7 @@ images-for-server() {
         echo "Building for build-agent version ${picard_version}"
 
         PICARD_VERSION=${picard_version} \
-            IMAGE_TAG_SUFFIX="-server-${MAJOR_SERVER_VERSION}.${minor}" \
+            IMAGE_TAG_SUFFIX="-server-${version}" \
             SKIP_PUSH_TEST_AGENT='true' \
             ./do images
     done
