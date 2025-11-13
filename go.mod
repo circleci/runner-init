@@ -105,10 +105,10 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.39.6 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.3 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.31.19 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.18.23 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.31.20 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.24 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.13 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.20.6 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.20.7 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 // indirect
@@ -120,10 +120,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/kms v1.41.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.90.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.30.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.6 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.40.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.90.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.7 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.40.2 // indirect
 	github.com/aws/smithy-go v1.23.2 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.9.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
@@ -603,7 +603,7 @@ require (
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
-	github.com/circleci/ex v1.0.18572-c9dd937
+	github.com/circleci/ex v1.0.18589-92e3177
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
 	github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 // indirect
