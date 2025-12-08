@@ -45,7 +45,7 @@ func NewClient(c ClientConfig) *Client {
 		BaseURL:    c.BaseURL,
 		AuthToken:  string(c.AuthToken),
 		AcceptType: httpclient.JSON,
-		Timeout:    time.Minute * 5,
+		Timeout:    time.Minute * 1,
 		UserAgent:  c.Info.userAgent(),
 		DialContext: dnscache.DialContext(dnscache.New(dnscache.Config{
 			TTL: 30 * time.Second,
