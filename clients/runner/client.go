@@ -10,6 +10,7 @@ import (
 
 	"github.com/circleci/ex/config/secret"
 	"github.com/circleci/ex/httpclient"
+	"github.com/circleci/ex/httpclient/dnscache"
 	"github.com/circleci/ex/httpclient/metrics"
 	"github.com/circleci/ex/o11y"
 )
@@ -29,10 +30,13 @@ type ClientConfig struct {
 
 type Info struct {
 	AgentVersion string
+	// Correlation should be a unique-ish string to correlate API requests and logs
+	Correlation string
 }
 
 func (i Info) userAgent() string {
-	return fmt.Sprintf("CircleCI-GOAT/%s (%s; %s)", i.AgentVersion, runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("CircleCI-GOAT/%s (%s; %s; %s)",
+		i.AgentVersion, runtime.GOOS, runtime.GOARCH, i.Correlation)
 }
 
 func NewClient(c ClientConfig) *Client {
@@ -41,8 +45,11 @@ func NewClient(c ClientConfig) *Client {
 		BaseURL:    c.BaseURL,
 		AuthToken:  string(c.AuthToken),
 		AcceptType: httpclient.JSON,
-		Timeout:    time.Minute * 5,
+		Timeout:    time.Minute * 1,
 		UserAgent:  c.Info.userAgent(),
+		DialContext: dnscache.DialContext(dnscache.New(dnscache.Config{
+			TTL: 30 * time.Second,
+		}), nil),
 	}
 
 	if c.Tracer != nil {
