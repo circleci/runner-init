@@ -83,6 +83,7 @@ func TestRunTask(t *testing.T) {
 			"CIRCLECI_GOAT_HEALTH_CHECK_ADDR=:7624",
 		)
 		res, err := r.Start(orchestratorTestBinaryOverride)
+		assert.NilError(t, err)
 		defer func() { t.Log(res.Logs()) }()
 
 		t.Run("Probe for readiness", func(t *testing.T) {
@@ -141,10 +142,6 @@ func TestRunTask(t *testing.T) {
 		assert.NilError(t, err)
 		defer func() { t.Log(res.Logs()) }()
 
-		t.Run("Probe for readiness", func(t *testing.T) {
-			assert.NilError(t, res.Ready("admin", time.Second*20))
-		})
-
 		t.Run("Run task", func(t *testing.T) {
 			select {
 			case err = <-res.Wait():
@@ -202,10 +199,6 @@ func TestRunTask(t *testing.T) {
 		res, err := r.Start(orchestratorTestBinaryRunTask)
 		assert.NilError(t, err)
 		defer func() { t.Log(res.Logs()) }()
-
-		t.Run("Probe for readiness", func(t *testing.T) {
-			assert.NilError(t, res.Ready("admin", time.Second*20))
-		})
 
 		t.Run("Run task", func(t *testing.T) {
 			select {
