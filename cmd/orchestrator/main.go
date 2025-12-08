@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log" //nolint:depguard // a non-O11y log is allowed for a top-level fatal exit
 	"os"
+	"strings"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -13,6 +14,7 @@ import (
 	"github.com/circleci/ex/o11y"
 	"github.com/circleci/ex/system"
 	"github.com/circleci/ex/termination"
+	"github.com/circleci/ex/testing/testrand"
 
 	"github.com/circleci/runner-init/clients/runner"
 	"github.com/circleci/runner-init/cmd"
@@ -131,6 +133,7 @@ func runSetup(ctx context.Context, cli cli, version string, sys *system.System) 
 		AuthToken: c.Config.Token,
 		Info: runner.Info{
 			AgentVersion: version,
+			Correlation:  correlation(),
 		},
 	})
 
@@ -143,6 +146,18 @@ func runSetup(ctx context.Context, cli cli, version string, sys *system.System) 
 	}
 
 	return o, nil
+}
+
+// correlation returns a unique-ish string to correlate API requests and logs.
+// We prefer the Pod name, which we currently get via the hostname since we don't inject it into the task
+// environment yet. However, hostname is not fully reliable (it can be overridden in the Pod spec, or some
+// providers may not set it to the Pod name), so we fall back to a pseudo-random hex string if needed.
+func correlation() string {
+	hostname, _ := os.Hostname()
+	if strings.HasPrefix(hostname, "ccita-") {
+		return hostname
+	}
+	return testrand.Hex(8)
 }
 
 type Runner interface {
