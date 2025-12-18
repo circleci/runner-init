@@ -8,6 +8,15 @@
     "gomodTidy",
     "gomodUpdateImportPaths"
   ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security",
+      "CVE"
+    ]
+  },
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
   "packageRules": [
     {
       "matchPackageNames": [
