@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "local>circleci/renovate-config",
+    "mergeConfidence:all-badges"
   ],
   "postUpdateOptions": [
     "gomodTidy",
