@@ -4,6 +4,7 @@
     "local>circleci/renovate-config",
     "mergeConfidence:all-badges"
   ],
+  "baseBranchPatterns": ["main"],
   "postUpdateOptions": [
     "gomodTidy",
     "gomodUpdateImportPaths"
@@ -18,6 +19,21 @@
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
   "packageRules": [
+    {
+      "groupName": "go dependencies (patch versions)",
+      "matchUpdateTypes": "patch",
+      "matchDatasources": [
+        "go"
+      ]
+    },
+    {
+      "matchDepNames": [
+        "golang",
+        "cimg/go",
+        "go"
+      ],
+      "groupName": "go version"
+    },
     {
       "matchPackageNames": [
         "github.com/circleci/ex"
