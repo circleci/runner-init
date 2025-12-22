@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>circleci/renovate-config",
+    "config:recommended",
     "mergeConfidence:all-badges"
   ],
   "baseBranchPatterns": ["main"],
@@ -9,6 +9,8 @@
     "gomodTidy",
     "gomodUpdateImportPaths"
   ],
+  "labels": ["renovate"],
+
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": [
@@ -27,20 +29,24 @@
   "packageRules": [
     {
       "groupName": "go dependencies (patch versions)",
+      "description": "Group all patch updates into a single pull request",
       "matchUpdateTypes": "patch",
       "matchDatasources": [
         "go"
       ]
     },
     {
+      "groupName": "go version",
+      "description": "Upgrade Go version in various places to keep them consistent",
       "matchDepNames": [
         "golang",
         "cimg/go",
         "go"
-      ],
-      "groupName": "go version"
+      ]
     },
     {
+      "groupName": "circleci/ex",
+      "description": "circleci/ex publishes with a prerelease tag and needs ignoreUnstable false",
       "matchPackageNames": [
         "github.com/circleci/ex"
       ],
