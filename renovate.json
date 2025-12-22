@@ -18,6 +18,12 @@
   },
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
+
+  "minimumReleaseAge": "7 days",
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
+  "internalChecksFilter": "strict",
+  "prCreation": "not-pending",
+
   "packageRules": [
     {
       "groupName": "go dependencies (patch versions)",
