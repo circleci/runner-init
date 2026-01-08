@@ -65,7 +65,7 @@ workflows:
       - check-license-attributions:
           context: [ org-global ]
       - images:
-          context: [ org-global, runner-image-signing ]
+          context: [ org-global, runner-image-signing ] 
           requires: [ lint, build, scan, vuln-scanner/vuln_scan ]
       - smoke-tests:
           context: [ org-global, runner-smoke-tests ]
