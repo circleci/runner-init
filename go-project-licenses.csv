@@ -5,9 +5,6 @@ github.com/cenkalti/backoff/v5,MIT
 github.com/cespare/xxhash/v2,MIT
 github.com/circleci/ex,MIT
 github.com/circleci/runner-init,Apache-2.0
-github.com/facebookgo/clock,MIT
-github.com/facebookgo/limitgroup,BSD-3-Clause
-github.com/facebookgo/muster,BSD-3-Clause
 github.com/fsnotify/fsnotify,BSD-3-Clause
 github.com/gabriel-vasile/mimetype,MIT
 github.com/gin-contrib/sse,MIT
@@ -24,14 +21,6 @@ github.com/google/uuid,BSD-3-Clause
 github.com/grpc-ecosystem/grpc-gateway/v2,BSD-3-Clause
 github.com/hashicorp/go-reap,MPL-2.0
 github.com/hellofresh/health-go/v5,Apache-2.0
-github.com/honeycombio/beeline-go,Apache-2.0
-github.com/honeycombio/dynsampler-go,Apache-2.0
-github.com/honeycombio/libhoney-go,Apache-2.0
-github.com/klauspost/compress,MIT
-github.com/klauspost/compress,Apache-2.0
-github.com/klauspost/compress,BSD-3-Clause
-github.com/klauspost/compress/internal/snapref,BSD-3-Clause
-github.com/klauspost/compress/zstd/internal/xxhash,MIT
 github.com/leodido/go-urn,MIT
 github.com/mattn/go-isatty,MIT
 github.com/pelletier/go-toml/v2,MIT
@@ -40,8 +29,6 @@ github.com/quic-go/quic-go,MIT
 github.com/rollbar/rollbar-go,MIT
 github.com/ugorji/go/codec,MIT
 github.com/vmihailenco/go-tinylfu,MIT
-github.com/vmihailenco/msgpack/v5,BSD-2-Clause
-github.com/vmihailenco/tagparser/v2,BSD-2-Clause
 go.opentelemetry.io/auto/sdk,Apache-2.0
 go.opentelemetry.io/otel,Apache-2.0
 go.opentelemetry.io/otel,BSD-3-Clause
@@ -67,4 +54,3 @@ google.golang.org/genproto/googleapis/api/httpbody,Apache-2.0
 google.golang.org/genproto/googleapis/rpc,Apache-2.0
 google.golang.org/grpc,Apache-2.0
 google.golang.org/protobuf,BSD-3-Clause
-gopkg.in/alexcesaro/statsd.v2,MIT
