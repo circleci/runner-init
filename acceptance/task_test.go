@@ -90,6 +90,10 @@ func TestRunTask(t *testing.T) {
 			assert.NilError(t, res.Ready("admin", time.Second*20))
 		})
 
+		t.Run("Check logs", func(t *testing.T) {
+			assert.Check(t, cmp.Contains(res.Logs(), "starting orchestrator app.date= app.version=dev"))
+		})
+
 		t.Run("Custom entrypoint ran", func(t *testing.T) {
 			assert.Check(t, cmp.Contains(res.Logs(), "Executing custom entrypoint"))
 		})
