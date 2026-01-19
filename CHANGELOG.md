@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#242](https://github.com/circleci/runner-init/pull/242) [INTERNAL] Bump `ex` and migrate from `o11y.Config` to `o11y.OtelConfig`.
 - [#235](https://github.com/circleci/runner-init/pull/235) Decrease runner API request timeout and add correlation string to requests.
 - [#174](https://github.com/circleci/runner-init/pull/174) Add support for a custom entrypoint override.
 - [#224](https://github.com/circleci/runner-init/pull/224) Record and log timings in orchestrator init function.
