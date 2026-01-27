@@ -429,10 +429,20 @@ commands:
       go-build:
         type: boolean
         default: true
+      go-mod:
+        type: boolean
+        default: true
       golangci-lint:
         type: boolean
         default: false
     steps:
+      - when:
+          condition: << parameters.go-mod >>
+          steps:
+            - restore_cache:
+                keys:
+                  - v1-go-mod-{{ checksum "go.sum" }}
+                  - v1-go-mod-
       - when:
           condition: << parameters.golangci-lint >>
           steps:
@@ -446,6 +456,13 @@ commands:
                 keys:
                   - v1-go-build-{{ .Environment.CIRCLE_JOB }}-{{ checksum "go.sum" }}-{{ epoch | round "72h" }}
       - steps: << parameters.steps >>
+      - when:
+          condition: << parameters.go-mod >>
+          steps:
+            - save_cache:
+                key: v1-go-mod-{{ checksum "go.sum" }}
+                paths:
+                  - /home/circleci/go/pkg/mod
       - when:
           condition: << parameters.golangci-lint >>
           steps:
