@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-json v0.10.5
 	github.com/google/go-cmp v0.7.0
-	github.com/hashicorp/go-reap v0.0.0-20230117204525-bf69c61a7b71
+	github.com/hashicorp/go-reap v0.0.0-20260220095743-4e27870b4f51
 	gotest.tools/v3 v3.5.2
 )
 
