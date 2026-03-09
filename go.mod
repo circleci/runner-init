@@ -1,8 +1,6 @@
 module github.com/circleci/runner-init
 
-go 1.25.5
-
-toolchain go1.25.6
+go 1.25.8
 
 require (
 	github.com/alecthomas/kong v1.13.0
