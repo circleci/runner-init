@@ -2,8 +2,6 @@ module github.com/circleci/runner-init
 
 go 1.25.5
 
-toolchain go1.25.5
-
 require (
 	github.com/alecthomas/kong v1.13.0
 	github.com/fsnotify/fsnotify v1.9.0
