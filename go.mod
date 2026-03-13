@@ -3,7 +3,7 @@ module github.com/circleci/runner-init
 go 1.26.0
 
 require (
-	github.com/alecthomas/kong v1.13.0
+	github.com/alecthomas/kong v1.14.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-json v0.10.5
