@@ -20,26 +20,36 @@ type CLI struct {
 		IsCanary bool   `name:"is-canary" env:"IS_CANARY" default:"false" help:"Whether this is a canary or not. Some things like the Docker image repositories may differ for canaries."`
 
 		// Driver-specific parameters
-		Machine    `prefix:"machine-" envprefix:"MACHINE_"`
-		Kubernetes `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
+		Machine     `prefix:"machine-" envprefix:"MACHINE_"`
+		Kubernetes  `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
+		RunnerProvisioner `prefix:"runner-provisioner-" envprefix:"RUNNER_PROVISIONER_"`
 	} `envprefix:"SMOKE_TESTS_" embed:""`
 }
 
+type DriverConfig struct {
+	CircleHost      string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://circleci.com" help:"URL to your CircleCI host."`
+	CircleToken     secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API."`
+	RunnerNamespace string        `name:"runner-namespace" env:"RUNNER_NAMESPACE" default:"circleci-runner" help:"Namespace of the runner resource classes."`
+}
+
 type Machine struct {
-	CircleHost      string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://circleci.com" help:"URL to your CircleCI host for the machine tests."`
-	CircleToken     secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API for the machine tests."`
-	RunnerNamespace string        `name:"runner-namespace" env:"RUNNER_NAMESPACE" default:"circleci-runner" help:"Namespace of the machine runner resource classes."`
-	Skip            bool          `env:"SKIP" help:"Skip tests for the machine driver."`
+	DriverConfig
+	Skip bool `env:"SKIP" help:"Skip tests for the machine driver."`
 }
 
 type Kubernetes struct {
-	CircleHost      string        `name:"circle-host" env:"CIRCLE_HOST" default:"https://k9s.sphereci.com" help:"URL to your CircleCI host for the Kubernetes tests."`
-	CircleToken     secret.String `name:"circle-api-token" env:"CIRCLE_API_TOKEN" required:"true" help:"An API token to authenticate with the CircleCI API for the Kubernetes tests."`
-	RunnerNamespace string        `name:"runner-namespace" env:"RUNNER_NAMESPACE" default:"k9s" help:"Namespace of the container runner resource classes."`
-	Skip            bool          `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
+	DriverConfig
+	Skip bool `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
 
 	RunnerInitTag   string `env:"RUNNER_INIT_TAG" default:"" help:"The runner-init image tag to use in the smoke tests."`
 	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
+}
+
+type RunnerProvisioner struct {
+	DriverConfig
+	Skip bool `env:"SKIP" default:"true" help:"Skip tests for the runner-provisioner driver."`
+
+	Branch string `env:"BRANCH" default:"main" help:"An optional branch name on the runner-provisioner repository. This can be used for testing a pre-release version."`
 }
 
 var cli *CLI
@@ -77,19 +87,30 @@ func TestSmoke(t *testing.T) {
 			},
 		},
 		{
-			name:   "kubernetes success",
-			driver: "kubernetes",
-			//circleHost:  cli.Tests.Kubernetes.CircleHost,
-			//circleToken: cli.Tests.Kubernetes.CircleToken,
-			//namespace:   cli.Tests.Kubernetes.RunnerNamespace,
-			// TODO: Temporarily run the Kubernetes smoke tests on cloud until we complete https://circleci.atlassian.net/browse/ONPREM-2237
-			circleHost:  cli.Tests.Machine.CircleHost,
-			circleToken: cli.Tests.Machine.CircleToken,
-			namespace:   cli.Tests.Machine.RunnerNamespace,
+			name:        "kubernetes success",
+			driver:      "kubernetes",
+			circleHost:  cli.Tests.Kubernetes.CircleHost,
+			circleToken: cli.Tests.Kubernetes.CircleToken,
+			namespace:   cli.Tests.Kubernetes.RunnerNamespace,
 			skip:        cli.Tests.Kubernetes.Skip,
 			cases: []TestCase{
 				{
 					WorkflowName:       "kubernetes",
+					WantWorkflowStatus: "success",
+					CheckJobs:          nil,
+				},
+			},
+		},
+		{
+			name:        "runner-provisioner success",
+			driver:      "provisioner",
+			circleHost:  cli.Tests.RunnerProvisioner.CircleHost,
+			circleToken: cli.Tests.RunnerProvisioner.CircleToken,
+			namespace:   cli.Tests.RunnerProvisioner.RunnerNamespace,
+			skip:        cli.Tests.RunnerProvisioner.Skip,
+			cases: []TestCase{
+				{
+					WorkflowName:       "provisioner",
 					WantWorkflowStatus: "success",
 					CheckJobs:          nil,
 				},
@@ -118,6 +139,7 @@ func TestSmoke(t *testing.T) {
 				ExtraPipelineParameters: map[string]any{
 					"kubernetes_helm_chart_branch": cli.Tests.HelmChartBranch,
 					"kubernetes_runner_init_tag":   cli.Tests.RunnerInitTag,
+					"provisioner_branch":           cli.Tests.RunnerProvisioner.Branch,
 				},
 			}
 			st.Setup(t)
