@@ -20,8 +20,8 @@ type CLI struct {
 		IsCanary bool   `name:"is-canary" env:"IS_CANARY" default:"false" help:"Whether this is a canary or not. Some things like the Docker image repositories may differ for canaries."`
 
 		// Driver-specific parameters
-		Machine     `prefix:"machine-" envprefix:"MACHINE_"`
-		Kubernetes  `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
+		Machine           `prefix:"machine-" envprefix:"MACHINE_"`
+		Kubernetes        `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
 		RunnerProvisioner `prefix:"runner-provisioner-" envprefix:"RUNNER_PROVISIONER_"`
 	} `envprefix:"SMOKE_TESTS_" embed:""`
 }
@@ -33,21 +33,21 @@ type DriverConfig struct {
 }
 
 type Machine struct {
-	DriverConfig
-	Skip bool `env:"SKIP" help:"Skip tests for the machine driver."`
+	DriverConfig `embed:""`
+	Skip         bool `env:"SKIP" help:"Skip tests for the machine driver."`
 }
 
 type Kubernetes struct {
-	DriverConfig
-	Skip bool `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
+	DriverConfig `embed:""`
+	Skip         bool `env:"SKIP" help:"Skip tests for the Kubernetes driver."`
 
 	RunnerInitTag   string `env:"RUNNER_INIT_TAG" default:"" help:"The runner-init image tag to use in the smoke tests."`
 	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
 }
 
 type RunnerProvisioner struct {
-	DriverConfig
-	Skip bool `env:"SKIP" default:"true" help:"Skip tests for the runner-provisioner driver."`
+	DriverConfig `embed:""`
+	Skip         bool `env:"SKIP" default:"true" help:"Skip tests for the runner-provisioner driver."`
 
 	Branch string `env:"BRANCH" default:"main" help:"An optional branch name on the runner-provisioner repository. This can be used for testing a pre-release version."`
 }
