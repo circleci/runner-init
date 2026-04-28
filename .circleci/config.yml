@@ -37,6 +37,7 @@ executors:
         auth:
           username: ${DOCKER_HUB_USER}
           password: ${DOCKER_HUB_PASSWORD}
+    resource_class: medium.gen2
   linux_machine:
     machine:
       image: ubuntu-2204:2024.02.7
