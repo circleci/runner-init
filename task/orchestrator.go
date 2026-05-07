@@ -210,7 +210,9 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 	ctx = o11y.WithProvider(context.Background(), o11y.FromContext(ctx))
 	c := o.config
 
+	var errMsg string
 	if err != nil {
+		errMsg = fmt.Sprintf("%v: Check container logs for more details", err)
 		err = fmt.Errorf("%w: Check container logs for more details", err)
 	}
 
@@ -227,7 +229,7 @@ func (o *Orchestrator) handleErrors(ctx context.Context, err error) error {
 		unclaimErr = fmt.Errorf("failed to retry task: %w", unclaimErr)
 	}
 
-	failErr := o.runnerClient.FailTask(ctx, time.Now(), c.Allocation, err.Error())
+	failErr := o.runnerClient.FailTask(ctx, time.Now(), c.Allocation, errMsg)
 	if failErr != nil {
 		failErr = fmt.Errorf("failed to send fail event for task: %w", failErr)
 		return errors.Join(failErr, unclaimErr, err)
