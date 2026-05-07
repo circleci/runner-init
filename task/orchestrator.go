@@ -178,7 +178,7 @@ func (o *Orchestrator) executeAgent(ctx context.Context) error {
 	}
 
 	if err := o.taskAgent.Wait(); err != nil {
-		return fmt.Errorf("task agent command exited with an unexpected error: %w", err)
+		return fmt.Errorf("task agent command exited with an unexpected error: %v", err)
 	}
 
 	return nil
