@@ -83,6 +83,7 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 
 		if err := o.executeAgent(ctx); err != nil {
 			errCh <- fmt.Errorf("error while executing task agent: %w", err)
+			return
 		}
 		errCh <- nil
 	}()
@@ -178,7 +179,7 @@ func (o *Orchestrator) executeAgent(ctx context.Context) error {
 	}
 
 	if err := o.taskAgent.Wait(); err != nil {
-		return fmt.Errorf("task agent command exited with an unexpected error: %w", err)
+		return fmt.Errorf("task agent command exited with an unexpected error: %v", err)
 	}
 
 	return nil

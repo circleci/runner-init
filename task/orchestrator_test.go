@@ -342,8 +342,8 @@ func TestOrchestrator_waitForReadiness(t *testing.T) {
 		o.config.ReadinessFilePath = filepath.Join(t.TempDir(), "ready")
 
 		f, err := os.Create(o.config.ReadinessFilePath)
-		t.Cleanup(func() { assert.NilError(t, f.Close()) })
 		assert.NilError(t, err)
+		assert.NilError(t, f.Close())
 
 		err = o.waitForReadiness(ctx)
 		assert.NilError(t, err)
@@ -360,8 +360,8 @@ func TestOrchestrator_waitForReadiness(t *testing.T) {
 		go func() {
 			time.Sleep(250 * time.Millisecond)
 			f, err := os.Create(o.config.ReadinessFilePath)
-			t.Cleanup(func() { assert.NilError(t, f.Close()) })
 			assert.NilError(t, err)
+			assert.NilError(t, f.Close())
 		}()
 
 		err := o.waitForReadiness(ctx)
