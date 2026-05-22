@@ -83,6 +83,7 @@ func (o *Orchestrator) Run(parentCtx context.Context) (err error) {
 
 		if err := o.executeAgent(ctx); err != nil {
 			errCh <- fmt.Errorf("error while executing task agent: %w", err)
+			return
 		}
 		errCh <- nil
 	}()
