@@ -148,6 +148,7 @@ jobs:
       - with-go-cache:
           steps:
             - run: ./do test ./...
+      - store_results
       - notify_failing_main
 
   build:

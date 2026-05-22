@@ -10,6 +10,7 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [#307](https://github.com/circleci/runner-init/pull/307) [INTERNAL] Fix goroutine in orchestrator that could leak after the task agent returned an error, by returning early instead of also sending a trailing `nil` to the result channel.
 - [#300](https://github.com/circleci/runner-init/pull/300) [INTERNAL] Fix task agent error messages to include stderr content. Changed error handling to use `%v` format verb when generating error messages for task events, ensuring stderr output from failed task agents is properly captured and displayed.
 - [#242](https://github.com/circleci/runner-init/pull/242) [INTERNAL] Bump `ex` and migrate from `o11y.Config` to `o11y.OtelConfig`.
 - [#235](https://github.com/circleci/runner-init/pull/235) Decrease runner API request timeout and add correlation string to requests.
