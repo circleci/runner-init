@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/alecthomas/kong v1.15.0
-	github.com/fsnotify/fsnotify v1.9.0
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-json v0.10.6
 	github.com/google/go-cmp v0.7.0
