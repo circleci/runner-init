@@ -12,10 +12,10 @@ parameters:
 
 orbs:
   slack: circleci/slack@6.1.2
-  vuln-scanner: cci-internal/vuln-scanner@0.11.6
+  vuln-scanner: cci-internal/vuln-scanner@0.11.8
 
 x-data:
-  go_image: &goimage cimg/go:1.26.1
+  go_image: &goimage cimg/go:1.26.2
 
 executors:
   go-medium:
@@ -148,6 +148,7 @@ jobs:
       - with-go-cache:
           steps:
             - run: ./do test ./...
+      - store_results
       - notify_failing_main
 
   build:
