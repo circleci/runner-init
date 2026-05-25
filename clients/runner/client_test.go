@@ -1,5 +1,6 @@
 package runner
 
+//nolint:goconst // "application/json; charset=utf-8" used in test expectations
 import (
 	"encoding/json"
 	"net/http"
@@ -18,8 +19,6 @@ import (
 
 	"github.com/circleci/runner-init/internal/testing/fakerunnerapi"
 )
-
-const jsonUTF8ContentType = "jsonUTF8ContentType"
 
 func TestClient_UnclaimTask(t *testing.T) {
 	type unclaim struct {
@@ -58,8 +57,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 				{
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v3/runner/unclaim"},
-					Header: http.Header{"Accept": {"jsonUTF8ContentType"}, "Accept-Encoding": {"gzip"},
-						"Content-Type": {"jsonUTF8ContentType"},
+					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
+						"Content-Type": {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, unclaim{
 						ID:    goodTask.ID,
@@ -78,8 +77,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 				{
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v3/runner/unclaim"},
-					Header: http.Header{"Accept": {"jsonUTF8ContentType"}, "Accept-Encoding": {"gzip"},
-						"Content-Type": {"jsonUTF8ContentType"},
+					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
+						"Content-Type": {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, unclaim{
 						ID:    exhaustedTask.ID,
@@ -99,8 +98,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 				{
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v3/runner/unclaim"},
-					Header: http.Header{"Accept": {"jsonUTF8ContentType"}, "Accept-Encoding": {"gzip"},
-						"Content-Type": {"jsonUTF8ContentType"}},
+					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
+						"Content-Type": {"application/json; charset=utf-8"}},
 					Body: jsonMustMarshal(t, unclaim{
 						ID:    "notfound",
 						Token: "notfound",
@@ -168,10 +167,10 @@ func TestClient_FailTask(t *testing.T) {
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v2/task/event/fail"},
 					Header: http.Header{
-						"Accept":          {"jsonUTF8ContentType"},
+						"Accept":          {"application/json; charset=utf-8"},
 						"Accept-Encoding": {"gzip"},
 						"Authorization":   {"Bearer testtoken"},
-						"Content-Type":    {"jsonUTF8ContentType"},
+						"Content-Type":    {"application/json; charset=utf-8"},
 					},
 					Body: jsonMustMarshal(t, struct {
 						Allocation     string `json:"allocation"`
