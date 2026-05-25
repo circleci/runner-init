@@ -19,6 +19,8 @@ import (
 	"github.com/circleci/runner-init/internal/testing/fakerunnerapi"
 )
 
+const jsonUTF8ContentType = "jsonUTF8ContentType"
+
 func TestClient_UnclaimTask(t *testing.T) {
 	type unclaim struct {
 		ID    string `json:"task_id"`
@@ -56,8 +58,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 				{
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v3/runner/unclaim"},
-					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
-						"Content-Type": {"application/json; charset=utf-8"},
+					Header: http.Header{"Accept": {"jsonUTF8ContentType"}, "Accept-Encoding": {"gzip"},
+						"Content-Type": {"jsonUTF8ContentType"},
 					},
 					Body: jsonMustMarshal(t, unclaim{
 						ID:    goodTask.ID,
@@ -76,8 +78,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 				{
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v3/runner/unclaim"},
-					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
-						"Content-Type": {"application/json; charset=utf-8"},
+					Header: http.Header{"Accept": {"jsonUTF8ContentType"}, "Accept-Encoding": {"gzip"},
+						"Content-Type": {"jsonUTF8ContentType"},
 					},
 					Body: jsonMustMarshal(t, unclaim{
 						ID:    exhaustedTask.ID,
@@ -97,8 +99,8 @@ func TestClient_UnclaimTask(t *testing.T) {
 				{
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v3/runner/unclaim"},
-					Header: http.Header{"Accept": {"application/json; charset=utf-8"}, "Accept-Encoding": {"gzip"},
-						"Content-Type": {"application/json; charset=utf-8"}},
+					Header: http.Header{"Accept": {"jsonUTF8ContentType"}, "Accept-Encoding": {"gzip"},
+						"Content-Type": {"jsonUTF8ContentType"}},
 					Body: jsonMustMarshal(t, unclaim{
 						ID:    "notfound",
 						Token: "notfound",
@@ -166,10 +168,10 @@ func TestClient_FailTask(t *testing.T) {
 					Method: "POST",
 					URL:    url.URL{Path: "/api/v2/task/event/fail"},
 					Header: http.Header{
-						"Accept":          {"application/json; charset=utf-8"},
+						"Accept":          {"jsonUTF8ContentType"},
 						"Accept-Encoding": {"gzip"},
 						"Authorization":   {"Bearer testtoken"},
-						"Content-Type":    {"application/json; charset=utf-8"},
+						"Content-Type":    {"jsonUTF8ContentType"},
 					},
 					Body: jsonMustMarshal(t, struct {
 						Allocation     string `json:"allocation"`
