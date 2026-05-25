@@ -1,5 +1,6 @@
 package runner
 
+//nolint:goconst // "application/json; charset=utf-8" used in test expectations
 import (
 	"encoding/json"
 	"net/http"
