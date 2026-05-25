@@ -26,7 +26,7 @@ func (e Entrypoint) Run(ctx context.Context) (err error) {
 		args = append(args, e.args[1:]...)
 	}
 
-	//#nosec:G204,G702 // this is intentionally setting up a command
+	//#nosec G204,G702 // this is intentionally setting up a command
 	if err := syscall.Exec(e.args[0], args, os.Environ()); err != nil {
 		return fmt.Errorf("error executing entrypoint override: %w", err)
 	}
