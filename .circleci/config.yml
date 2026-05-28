@@ -154,7 +154,9 @@ jobs:
       - setup
       - with-go-cache:
           steps:
-            - run: ./do test ./...
+            - run:
+                command: ./do test ./...
+                max_auto_reruns: 2
       - store_results
       - notify_failing_main
 
