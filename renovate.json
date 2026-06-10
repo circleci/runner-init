@@ -51,6 +51,17 @@
         "github.com/circleci/ex"
       ],
       "ignoreUnstable": false
+    },
+    {
+      "description": "Automerge CVE/Security updates",
+      "matchJsonata": ["$exists(isVulnerabilityAlert) and isVulnerabilityAlert = true"],
+      "automerge": true,
+      "automergeSchedule": [
+        "* 8-17 * * 1-5"
+      ],
+      "labels": [
+        "AUTOMERGE", "CVE", "security"
+      ]
     }
   ]
 }
