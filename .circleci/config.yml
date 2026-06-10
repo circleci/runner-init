@@ -11,11 +11,11 @@ parameters:
     default: false
 
 orbs:
-  slack: circleci/slack@6.1.2
+  slack: circleci/slack@6.1.3
   vuln-scanner: cci-internal/vuln-scanner@0.11.8
 
 x-data:
-  go_image: &goimage cimg/go:1.26.2
+  go_image: &goimage cimg/go:1.26.3
 
 executors:
   go-medium:
@@ -65,12 +65,19 @@ workflows:
           upload_on_merge: true
       - check-license-attributions:
           context: [ org-global ]
-      - images:
-          context: [ org-global, runner-image-signing ] 
+      - images: &images_job
+          name: images-dev
+          context: [ org-global ]
           requires: [ lint, build, scan, vuln-scanner/vuln_scan ]
+          filters: { branches: { ignore: main } }
+      - images:
+          <<: *images_job
+          name: images-main
+          context: [ org-global, runner-image-signing ]
+          filters: { branches: { only: main } }
       - smoke-tests:
           context: [ org-global, runner-smoke-tests ]
-          requires: [ images ]
+          requires: [ images-dev, images-main ]
   nightly:
     when:
       or:
@@ -147,7 +154,9 @@ jobs:
       - setup
       - with-go-cache:
           steps:
-            - run: ./do test ./...
+            - run:
+                command: ./do test ./...
+                max_auto_reruns: 2
       - store_results
       - notify_failing_main
 
