@@ -248,13 +248,13 @@ func TestOrchestrator(t *testing.T) {
 		},
 		{
 			name: "error: retryable, but exhausted all retries",
-			config: Config{
+			config: Config{ //#nosec G101 // test credentials
 				TaskID:        "no-retry",
 				Token:         "no-retry-token",
 				TaskAgentPath: "thiswontstart",
 			},
 			additionalTasks: []fakerunnerapi.Task{
-				{
+				{ //#nosec G101 // test credentials
 					ID:           "no-retry",
 					Token:        "no-retry-token",
 					UnclaimCount: 3,
@@ -262,7 +262,7 @@ func TestOrchestrator(t *testing.T) {
 			},
 			wantError: "failed to retry task: exhausted all task retries",
 			wantTaskUnclaims: []fakerunnerapi.TaskUnclaim{
-				{
+				{ //#nosec G101 // test credentials
 					ID:    "no-retry",
 					Token: "no-retry-token",
 				},

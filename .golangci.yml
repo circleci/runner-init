@@ -76,6 +76,10 @@ linters:
         path: _test\.go
         text: G107
       - linters:
+          - goconst
+        path: clients/runner/client_test\.go
+        text: 'application/json; charset=utf-8'
+      - linters:
           - revive
         text: 'package-comments: should have a package comment'
       - linters:
