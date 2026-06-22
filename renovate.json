@@ -1,31 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    "mergeConfidence:all-badges"
-  ],
+  "extends": ["local>circleci/renovate-config"],
   "baseBranchPatterns": ["main"],
-  "postUpdateOptions": [
-    "gomodTidy",
-    "gomodUpdateImportPaths"
-  ],
-  "labels": ["renovate"],
-
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "labels": [
-      "security",
-      "CVE"
-    ]
-  },
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
-
-  "minimumReleaseAge": "7 days",
-  "minimumReleaseAgeBehaviour": "timestamp-optional",
-  "internalChecksFilter": "strict",
-  "prCreation": "not-pending",
-
   "packageRules": [
     {
       "groupName": "go dependencies (patch versions)",
@@ -43,14 +21,6 @@
         "cimg/go",
         "go"
       ]
-    },
-    {
-      "groupName": "circleci/ex",
-      "description": "circleci/ex publishes with a prerelease tag and needs ignoreUnstable false",
-      "matchPackageNames": [
-        "github.com/circleci/ex"
-      ],
-      "ignoreUnstable": false
     },
     {
       "description": "Automerge CVE/Security updates",
