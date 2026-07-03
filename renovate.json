@@ -27,7 +27,8 @@
     "automerge": true,
     "automergeSchedule": [
       "* 8-17 * * 1-5"
-    ]
+    ],
+    "recreateWhen": "always"
   },
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
