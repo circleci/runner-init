@@ -1,14 +1,80 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>circleci/renovate-config"],
+  "extends": [
+    "config:recommended",
+    "mergeConfidence:all-badges",
+    "abandonments:recommended",
+    ":gomod",
+    ":maintainLockFilesDisabled",
+    ":docker",
+    ":separateMajorReleases"
+  ],
   "baseBranchPatterns": ["main"],
+  "schedule": ["* * * * 0"],
+  "configMigration": true,
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "labels": ["renovate"],
+
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security",
+      "CVE"
+    ],
+    "automerge": true,
+    "automergeSchedule": [
+      "* 8-17 * * 1-5"
+    ],
+    "recreateWhen": "always"
+  },
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
+
+  "minimumReleaseAge": "7 days",
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
+  "internalChecksFilter": "strict",
+  "prCreation": "not-pending",
+
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update cimg/go version in config.yml file",
+      "managerFilePatterns": [
+        "^\\.circleci/config\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "go_image: &goimage (?<depName>cimg\\/go):(?<currentValue>\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Go version in config.yml file",
+      "managerFilePatterns": [
+        "/^\\.circleci/config\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "go_full_version: &go_full_version (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "golang",
+      "datasourceTemplate": "golang-version"
+    }
+  ],
+
   "packageRules": [
+    {
+      "description": "Set sourceUrl for circleci orbs, so changelogs are included",
+      "matchDatasources": ["orb"],
+      "matchPackageNames": ["circleci/*"],
+      "sourceUrl": "https://github.com/CircleCI-Public/{{ lookup (split packageName '/') 1 }}-orb"
+    },
     {
       "groupName": "go dependencies (patch versions)",
       "description": "Group all patch updates into a single pull request",
-      "matchUpdateTypes": "patch",
+      "matchUpdateTypes": ["patch"],
       "matchDatasources": [
         "go"
       ]
@@ -23,15 +89,12 @@
       ]
     },
     {
-      "description": "Automerge CVE/Security updates",
-      "matchJsonata": ["$exists(isVulnerabilityAlert) and isVulnerabilityAlert = true"],
-      "automerge": true,
-      "automergeSchedule": [
-        "* 8-17 * * 1-5"
+      "groupName": "circleci/ex",
+      "description": "circleci/ex publishes with a prerelease tag and needs ignoreUnstable false",
+      "matchPackageNames": [
+        "github.com/circleci/ex"
       ],
-      "labels": [
-        "AUTOMERGE", "CVE", "security"
-      ]
+      "ignoreUnstable": false
     }
   ]
 }
