@@ -51,7 +51,7 @@ images() {
 # shellcheck disable=SC2034
 help_images_for_server="Build and push the Docker images and manifests for supported server versions."
 images-for-server() {
-    versions_array=(4.8 4.9 4.10 5.0)
+    versions_array=(4.8 4.9 4.10)
     last_version="${versions_array[-1]}"
 
     for version in "${versions_array[@]}"; do

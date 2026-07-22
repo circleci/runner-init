@@ -10,6 +10,9 @@ By following these guidelines, we can easily determine which changes should be i
 
 ## Edge
 
+- [INTERNAL] Fix goroutine in orchestrator that could leak after the task agent returned an error, by returning early instead of also sending a trailing `nil` to the result channel.
+- [INTERNAL] Fix task agent error messages to include stderr content. Changed error handling to use `%v` format verb when generating error messages for task events, ensuring stderr output from failed task agents is properly captured and displayed.
+- [INTERNAL] Fix `./do images-for-server` building against a `server-4.10` branch that doesn't exist yet; `4.10` is the current in-development version and should track `main` like previous unreleased versions did.
 - [#242](https://github.com/circleci/runner-init/pull/242) [INTERNAL] Bump `ex` and migrate from `o11y.Config` to `o11y.OtelConfig`.
 - [#235](https://github.com/circleci/runner-init/pull/235) Decrease runner API request timeout and add correlation string to requests.
 - [#174](https://github.com/circleci/runner-init/pull/174) Add support for a custom entrypoint override.
