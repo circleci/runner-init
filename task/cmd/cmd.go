@@ -79,11 +79,14 @@ func (c *Command) wait() error {
 	cmd := c.cmd
 	defer func() {
 		_ = cmd.Cancel()
-
-		c.isCompleted.Store(cmd.ProcessState != nil)
 	}()
 
 	err := cmd.Wait()
+
+	// Set isCompleted immediately after Wait() returns, before any error handling.
+	// This ensures IsRunning() returns false even if Wait() failed or ProcessState is nil.
+	c.isCompleted.Store(true)
+
 	if err != nil {
 		stderr := c.stderrSaver.Bytes()
 		if len(stderr) > 0 {
