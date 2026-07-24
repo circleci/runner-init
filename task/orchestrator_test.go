@@ -323,6 +323,15 @@ func TestOrchestrator(t *testing.T) {
 				assert.NilError(t, err)
 			}
 
+
+			check := func(poll.LogT) poll.Result {
+				if len(runnerAPI.TaskUnclaims()) == len(tt.wantTaskUnclaims) &&
+					len(runnerAPI.TaskEvents()) == len(tt.wantTaskEvents) {
+					return poll.Success()
+				}
+				return poll.Continue("haven't received the expected task events yet")
+			}
+			poll.WaitOn(t, check, poll.WithTimeout(30*time.Second))
 			assert.Check(t, cmp.DeepEqual(runnerAPI.TaskUnclaims(), tt.wantTaskUnclaims))
 			assert.Check(t, cmp.DeepEqual(runnerAPI.TaskEvents(), tt.wantTaskEvents, fakerunnerapi.CmpTaskEvent))
 
