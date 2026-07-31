@@ -36,6 +36,9 @@ images() {
     skip="${SKIP_PUSH:-true}"
     [ "${SKIP_PUSH:-true}" = "true" ] && push_windows="false" || push_windows="true"
 
+    skip_steps="validate"
+    [ -z "${COSIGN_PWD:-}" ] && skip_steps="${skip_steps},sign"
+
     SKIP_PUSH="${skip}" \
         SKIP_PUSH_TEST_AGENT="${SKIP_PUSH_TEST_AGENT:-${skip}}" \
         PUSH_WINDOWS="${push_windows}" \
@@ -44,7 +47,7 @@ images() {
         go tool goreleaser \
         --clean \
         --config "${BUILD_CONFIG:-./.goreleaser/dockers.yaml}" \
-        --skip=validate "$@"
+        --skip="${skip_steps}" "$@"
 }
 
 # This variable is used, but shellcheck can't tell.
