@@ -290,7 +290,7 @@ jobs:
       - run:
           name: Scan selected Docker images
           command: |
-            while IFS= ' ' read -r path arch; do
+            while IFS=' ' read -r path arch; do
               echo "Scanning ${path} ${arch}"
               name=${path//\//_}-${arch}
               NAME=${name,,} \
