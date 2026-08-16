@@ -15,7 +15,7 @@ orbs:
   vuln-scanner: cci-internal/vuln-scanner@0.11.8
 
 x-data:
-  go_image: &goimage cimg/go:1.26.4
+  go_image: &goimage cimg/go:1.26.5
 
 executors:
   go-medium:
@@ -40,8 +40,8 @@ executors:
     resource_class: medium.gen2
   linux_machine:
     machine:
-      image: ubuntu-2204:2024.02.7
-      resource_class: large
+      image: ubuntu-2204:current
+      resource_class: large.gen3
 
 workflows:
   main-workflow:
