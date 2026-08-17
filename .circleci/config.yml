@@ -16,6 +16,12 @@ orbs:
 
 x-data:
   go_image: &goimage cimg/go:1.26.5
+  # The Renovate app has no access to the restricted contexts the smoke tests
+  # need, so skip them on its branches now that security PRs automerge. They
+  # still run on main after the merge and on the nightly.
+  skip_on_renovate: &skip_on_renovate
+    branches:
+      ignore: /^renovate\/.*/
 
 executors:
   go-medium:
@@ -78,6 +84,7 @@ workflows:
       - smoke-tests:
           context: [ org-global, runner-smoke-tests ]
           requires: [ images-dev, images-main ]
+          filters: *skip_on_renovate
   nightly:
     when:
       or:

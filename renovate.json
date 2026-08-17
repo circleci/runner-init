@@ -21,6 +21,8 @@
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": [
+      "renovate",
+      "AUTOMERGE",
       "security",
       "CVE"
     ],
