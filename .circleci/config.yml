@@ -15,7 +15,7 @@ orbs:
   vuln-scanner: cci-internal/vuln-scanner@0.11.8
 
 x-data:
-  go_image: &goimage cimg/go:1.26.5
+  go_image: &goimage cimg/go:1.26.7
   # The Renovate app has no access to the restricted contexts the smoke tests
   # need, so skip them on its branches now that security PRs automerge. They
   # still run on main after the merge and on the nightly.
