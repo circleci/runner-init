@@ -47,7 +47,6 @@ executors:
   linux_machine:
     machine:
       image: ubuntu-2204:current
-      resource_class: large.gen3
 
 workflows:
   main-workflow:
@@ -185,6 +184,7 @@ jobs:
 
   images:
     executor: linux_machine
+    resource_class: large.gen3
     steps:
       - attach_workspace:
           at: /tmp/workspace
@@ -312,7 +312,7 @@ jobs:
       - store_artifacts:
           path: ccc-image-scan-results
       - notify_failing_main
-      
+
 
   smoke-tests:
     executor: go
