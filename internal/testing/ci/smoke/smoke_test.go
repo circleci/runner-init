@@ -49,7 +49,7 @@ type RunnerProvisioner struct {
 	DriverConfig `embed:""`
 	Skip         bool `env:"SKIP" default:"true" help:"Skip tests for the runner-provisioner driver."`
 
-	Branch string `env:"BRANCH" default:"main" help:"An optional branch name on the runner-provisioner repository. This can be used for testing a pre-release version."`
+	Branch string `env:"BRANCH" default:"main" help:"An optional branch name on the machine-runner-orchestrator repository. This can be used for testing a pre-release version."`
 }
 
 var cli *CLI
@@ -102,8 +102,8 @@ func TestSmoke(t *testing.T) {
 			},
 		},
 		{
-			name:        "runner-provisioner success",
-			driver:      "provisioner",
+			name:        "machine-runner-orchestrator success",
+			driver:      "machine-runner-orchestrator",
 			circleHost:  cli.Tests.RunnerProvisioner.CircleHost,
 			circleToken: cli.Tests.RunnerProvisioner.CircleToken,
 			namespace:   cli.Tests.RunnerProvisioner.RunnerNamespace,
@@ -137,9 +137,9 @@ func TestSmoke(t *testing.T) {
 				AgentVersion:    cli.Tests.Version,
 				IsCanary:        cli.Tests.IsCanary,
 				ExtraPipelineParameters: map[string]any{
-					"kubernetes_helm_chart_branch": cli.Tests.HelmChartBranch,
-					"kubernetes_runner_init_tag":   cli.Tests.RunnerInitTag,
-					"provisioner_branch":           cli.Tests.RunnerProvisioner.Branch,
+					"kubernetes_helm_chart_branch":       cli.Tests.HelmChartBranch,
+					"kubernetes_runner_init_tag":         cli.Tests.RunnerInitTag,
+					"machine_runner_orchestrator_branch": cli.Tests.RunnerProvisioner.Branch,
 				},
 			}
 			st.Setup(t)
