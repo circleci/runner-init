@@ -20,9 +20,9 @@ type CLI struct {
 		IsCanary bool   `name:"is-canary" env:"IS_CANARY" default:"false" help:"Whether this is a canary or not. Some things like the Docker image repositories may differ for canaries."`
 
 		// Driver-specific parameters
-		Machine           `prefix:"machine-" envprefix:"MACHINE_"`
-		Kubernetes        `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
-		RunnerProvisioner `prefix:"runner-provisioner-" envprefix:"RUNNER_PROVISIONER_"`
+		Machine                   `prefix:"machine-" envprefix:"MACHINE_"`
+		Kubernetes                `prefix:"kubernetes-" envprefix:"KUBERNETES_"`
+		MachineRunnerOrchestrator `prefix:"machine-runner-orchestrator-" envprefix:"MACHINE_RUNNER_ORCHESTRATOR_"`
 	} `envprefix:"SMOKE_TESTS_" embed:""`
 }
 
@@ -45,9 +45,9 @@ type Kubernetes struct {
 	HelmChartBranch string `env:"HELM_CHART_BRANCH" default:"" help:"An optional branch name on the CircleCI-Public/container-runner-helm-chart repository. This can be used for testing a pre-release Helm chart version."`
 }
 
-type RunnerProvisioner struct {
+type MachineRunnerOrchestrator struct {
 	DriverConfig `embed:""`
-	Skip         bool `env:"SKIP" default:"true" help:"Skip tests for the runner-provisioner driver."`
+	Skip         bool `env:"SKIP" default:"true" help:"Skip tests for the machine-runner-orchestrator driver."`
 
 	Branch string `env:"BRANCH" default:"main" help:"An optional branch name on the machine-runner-orchestrator repository. This can be used for testing a pre-release version."`
 }
@@ -104,10 +104,10 @@ func TestSmoke(t *testing.T) {
 		{
 			name:        "machine-runner-orchestrator success",
 			driver:      "machine-runner-orchestrator",
-			circleHost:  cli.Tests.RunnerProvisioner.CircleHost,
-			circleToken: cli.Tests.RunnerProvisioner.CircleToken,
-			namespace:   cli.Tests.RunnerProvisioner.RunnerNamespace,
-			skip:        cli.Tests.RunnerProvisioner.Skip,
+			circleHost:  cli.Tests.MachineRunnerOrchestrator.CircleHost,
+			circleToken: cli.Tests.MachineRunnerOrchestrator.CircleToken,
+			namespace:   cli.Tests.MachineRunnerOrchestrator.RunnerNamespace,
+			skip:        cli.Tests.MachineRunnerOrchestrator.Skip,
 			cases: []TestCase{
 				{
 					WorkflowName:       "provisioner",
@@ -139,7 +139,7 @@ func TestSmoke(t *testing.T) {
 				ExtraPipelineParameters: map[string]any{
 					"kubernetes_helm_chart_branch":       cli.Tests.HelmChartBranch,
 					"kubernetes_runner_init_tag":         cli.Tests.RunnerInitTag,
-					"machine_runner_orchestrator_branch": cli.Tests.RunnerProvisioner.Branch,
+					"machine_runner_orchestrator_branch": cli.Tests.MachineRunnerOrchestrator.Branch,
 				},
 			}
 			st.Setup(t)
