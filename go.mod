@@ -3,7 +3,7 @@ module github.com/circleci/runner-init
 go 1.26.2
 
 require (
-	github.com/alecthomas/kong v1.16.0
+	github.com/alecthomas/kong v1.16.1
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-json v0.10.6
@@ -485,12 +485,12 @@ require (
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sigstore/cosign/v3 v3.1.2 // indirect
+	github.com/sigstore/cosign/v3 v3.1.3 // indirect
 	github.com/sigstore/protobuf-specs v0.5.1 // indirect
 	github.com/sigstore/rekor v1.5.3 // indirect
 	github.com/sigstore/rekor-tiles/v2 v2.3.0 // indirect
 	github.com/sigstore/sigstore v1.10.8 // indirect
-	github.com/sigstore/sigstore-go v1.2.1 // indirect
+	github.com/sigstore/sigstore-go v1.2.2 // indirect
 	github.com/sigstore/sigstore/pkg/signature/kms/aws v1.10.8 // indirect
 	github.com/sigstore/sigstore/pkg/signature/kms/azure v1.10.8 // indirect
 	github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.10.8 // indirect
