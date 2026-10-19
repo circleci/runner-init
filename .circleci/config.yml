@@ -25,6 +25,7 @@ x-data:
 
 functions:
   setup-go: github.com/circleci-functions/setup-go@v0.5.3-4edeb2a
+  setup-docker: github.com/circleci-functions/setup-docker@v0.3.0
 
 executors:
   go-medium:
@@ -372,10 +373,10 @@ commands:
 
   docker_login:
     steps:
-      - run:
-          name: "Log into Docker Hub"
-          command: |
-            docker login -u "${DOCKER_HUB_USER}" -p "${DOCKER_HUB_PASSWORD}"
+      - setup-docker/login:
+          with:
+            username-env: DOCKER_HUB_USER
+            password-env: DOCKER_HUB_PASSWORD
 
   notify_failing_main:
     steps:
